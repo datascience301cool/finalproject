@@ -1,7 +1,7 @@
 ---
 title: "Data Memo"
-author: "Edwin Chalas Cuevas"
-date: "4/5/2021"
+author: "Edwin Chalas Cuevas, Preston Chan, Lauren Caldrone, Joshua Levitas"
+date: "4/8/2021"
 output: html_document
 ---
 
@@ -30,5 +30,15 @@ plot(pressure)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 ## Project timeline
+
+## Simple Overview of the Dataset
+
+For our final project, we will be using the "Used Cars Dataset" from Kaggle compiled by Austin Reese. This dataset contains the prices of used cars listed on Craigslist, an online marketplace that has the world's largest collection of used cars for sale. The dataset includes all used car listings in the United States, and it was last updated in December 2020.
+
+Each observation represents a unique listing on Craigslist. There are currently around 458,000 rows in the dataset. For each row, there are 26 columns that each describe various characteristics of each car such as price, condition, manufacturer, state of listing, and a variety of other characteristics. A few of theses columns are not useful, however, such as the primary key, `id`, `url`, `region_url`, `VIN`, `image_url`, and `description`. Therefore, the columns we likely will be using are `region`, `price`, `year`, `manufacturer`, `model`, `condition`, `cylinders`, `fuel`, `odometer`, `title_status`, `transmission`, `drive`, `size`, `type`, `paint_color`, `state`, `lat`, `long`, and `posting_date` (19 columns).
+
+When looking at missingness, there are a few columns that have a high proportion of missing values. These columns include `condition`, `cylinders`, `drive`, `size`, `type`, and `paint_color`. The proportion of missing values in these columns is 42%, 37%, 41%, 29%, 70%, 25%, and 31%, respectively. We will have to inspect each of these columns individually during the data cleaning process to determine how we will handle them and whether we will need to remove any of them from the dataset. Another column that has a somewhat high proportion of missing values is `odometer` at 12%. Since the number of miles on the odometer is such an important factor of price in the used car market, we will definitely keep this column in the dataset, which means that we will have to find a way to handle these missing values appropriately.
+
+In terms of data collection, we have already download the data set as a csv file from Kaggle. Our next step will be reading it into R.
 
 ## Citations
