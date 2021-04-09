@@ -21,15 +21,11 @@ summary(cars)
 
 ## Questions we want to answer
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+We are considering predicting price, as that seems like the most straightforward approach. We also considered predicting if the car sold, but that may be more difficult, as we will need to work through the data more closely.
 
 ## Project timeline
+
+Preston and Joshua have both worked with this data set prior to this assignment. That being said, we will have the data set loaded into R and analysis completed in the next few weeks, as our plan is to combine strenghts of each of their EDA from past projects. Our plan is to work through this project early in the quarter in order to clear up any questions or errors that we may run into during the completion of the project. 
 
 ## Simple Overview of the Dataset
 
@@ -41,4 +37,10 @@ When looking at missingness, there are a few columns that have a high proportion
 
 In terms of data collection, we have already download the data set as a csv file from Kaggle. Our next step will be reading it into R.
 
+## Potential Difficulties
+
+As discussed briefly in the overview of the data set, the issue that stands out the most is that there are multiple seemingly important variables that have a high proportion of missing values (namely `condition`, `cylinders`, `drive`, `size`, `type`, and `paint_color`). One of the first tasks we will need to do during the data cleaning process is figure out which of these columns we should keep in the dataset and what imputation methods we will employ to handle these missing values in the columns we decide to keep. From an intuitive standpoint, all of these variables seem like they will be important to the model besides `paint_color`, so we will likely have to keep these columns in the dataset and find an effective way handle the missing values. This will be especially difficult for the `size` column, in which 70% of the values are missing.
+
 ## Citations
+
+Used Cars Dataset: https://www.kaggle.com/austinreese/craigslist-carstrucks-data
