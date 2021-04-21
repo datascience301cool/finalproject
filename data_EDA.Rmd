@@ -1,46 +1,258 @@
 ---
 title: "Data Memo"
 author: "Edwin Chalas Cuevas, Preston Chan, Lauren Caldrone, Joshua Levitas"
-date: "4/8/2021"
-output: html_document
+date: "4/21/2021"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: "tango"
 ---
 
-```{r setup, include=FALSE}
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages
+library(tidyverse)
+library(tidymodels)
+library(janitor)
+library(patchwork)
+library(splitstackshape)
+
+# Set seed here!
+set.seed(57)
 ```
 
-## Short EDA
+## Read In the Data
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+vehicles <- read_csv("data/vehicles.csv") %>% 
+  clean_names()
 ```
 
-## Questions we want to answer
+## EDA
 
-We are considering predicting price, as that seems like the most straightforward approach. We also considered predicting if the car sold, but that may be more difficult, as we will need to work through the data more closely.
+Before beginning the EDA, I simplified the data set by removing irrelevant columns These columns include things likethe URL to the listing, the listing ID, the url to the listing's image, etc. These columns will have no predictive power.
 
-## Project timeline
+```{r}
+vehicles <- vehicles %>% 
+  select(-c(x1, id, url, region_url, vin, image_url, description, posting_date))
+```
 
-Preston and Joshua have both worked with this data set prior to this assignment. That being said, we will have the data set loaded into R and analysis completed in the next few weeks, as our plan is to combine strenghts of each of their EDA from past projects. Our plan is to work through this project early in the quarter in order to clear up any questions or errors that we may run into during the completion of the project. 
+After doing this, I began the EDA by performing an assurance check of the data using `skimr::skim_without_charts()`. 
 
-## Simple Overview of the Dataset
+```{r}
+skimr::skim_without_charts(vehicles)
+```
 
-For our final project, we will be using the "Used Cars Dataset" from Kaggle compiled by Austin Reese. This dataset contains the prices of used cars listed on Craigslist, an online marketplace that has the world's largest collection of used cars for sale. The dataset includes all used car listings in the United States, and it was last updated in December 2020.
+The main takeaway from the results was that a large handful of the variables had missingness, which was not surprising considering the massive size of the data set. Some of the variables that seemed to be important predictors (based on my intuition) had a somewhat high proportion of missingness, namely `condition`, `cylinders`, `drive`, `size`, and `type`. The proportion of missing values in these columns was 42%, 37%, 41%, 29%, 70%, and 25%, respectively. Most of the other columns had very low missingness. Another thing I noticed was that `state` had 51 unique vales and `region` had 405 unique values. I knew that this would cause an issue later on when creating a recipe and turning these variables into dummy variables since it would produce far too many columns, so I decided to classify the states into 5 regions: `northeast`, `southeast`, `midwest`, `southwest`, and `west`.
 
-Each observation represents a unique listing on Craigslist. There are currently around 458,000 rows in the dataset. For each row, there are 26 columns that each describe various characteristics of each car such as price, condition, manufacturer, state of listing, and a variety of other characteristics. A few of theses columns are not useful, however, such as the primary key, `id`, `url`, `region_url`, `VIN`, `image_url`, and `description`. Therefore, the columns we likely will be using are `region`, `price`, `year`, `manufacturer`, `model`, `condition`, `cylinders`, `fuel`, `odometer`, `title_status`, `transmission`, `drive`, `size`, `type`, `paint_color`, `state`, `lat`, `long`, and `posting_date` (19 columns).
+```{r}
+vehicles <- vehicles %>% 
+  mutate(state_region = 
+           case_when(
+             state %in% c("wv", "va", "ky", "nc", "sc", "tn", "ar", "la", "al", "ms", "ga", "fl") ~ "southeast", 
+             state %in% c("me", "vt", "nh", "ma", "ct", "ri", "ny", "nj", "pa", "de", "md", "dc") ~ "northeast", 
+             state %in% c("nd", "sd", "mn", "wi", "ia", "ne", "ks", "mo", "il", "in", "mi", "oh") ~ "midwest", 
+             state %in% c("ok", "tx", "nm", "az") ~ "southwest", 
+             state %in% c("ak", "hi", "wa", "or", "id", "mt", "wy", "co", "ut", "nv", "ca") ~ "west"
+           )
+  )
+```
 
-When looking at missingness, there are a few columns that have a high proportion of missing values. These columns include `condition`, `cylinders`, `drive`, `size`, `type`, and `paint_color`. The proportion of missing values in these columns is 42%, 37%, 41%, 29%, 70%, 25%, and 31%, respectively. We will have to inspect each of these columns individually during the data cleaning process to determine how we will handle them and whether we will need to remove any of them from the dataset. Another column that has a somewhat high proportion of missing values is `odometer` at 12%. Since the number of miles on the odometer is such an important factor of price in the used car market, we will definitely keep this column in the dataset, which means that we will have to find a way to handle these missing values appropriately.
+I also noticed that many variables that should be classified as factor variables were classified as character variables. I easily fixed this with the following code.
 
-In terms of data collection, we have already download the data set as a csv file from Kaggle. Our next step will be reading it into R.
+```{r}
+vehicles <- vehicles %>% 
+  mutate(condition = factor(condition)) %>% 
+  mutate(cylinders = factor(cylinders)) %>% 
+  mutate(fuel = factor(fuel)) %>% 
+  mutate(title_status = factor(title_status)) %>% 
+  mutate(transmission = factor(transmission)) %>% 
+  mutate(drive = factor(drive)) %>% 
+  mutate(size = factor(size)) %>% 
+  mutate(type = factor(type)) %>% 
+  mutate(paint_color = factor(paint_color)) %>% 
+  mutate(state_region = factor(state_region)) %>% 
+  mutate(manufacturer = factor(manufacturer))
+```
 
-## Potential Difficulties
+With the basic data cleaning done, I proceeded to conduct an EDA on the data. I started by focusing on the outcome variable, `price`. I first inspected its distribution.
 
-As discussed briefly in the overview of the data set, the issue that stands out the most is that there are multiple seemingly important variables that have a high proportion of missing values (namely `condition`, `cylinders`, `drive`, `size`, `type`, and `paint_color`). One of the first tasks we will need to do during the data cleaning process is figure out which of these columns we should keep in the dataset and what imputation methods we will employ to handle these missing values in the columns we decide to keep. From an intuitive standpoint, all of these variables seem like they will be important to the model besides `paint_color`, so we will likely have to keep these columns in the dataset and find an effective way handle the missing values. This will be especially difficult for the `size` column, in which 70% of the values are missing.
+```{r, message=FALSE, warning=FALSE}
+plot1 <- vehicles %>% 
+  ggplot(aes(x = price)) + 
+  geom_freqpoly() + 
+  labs(title = "Frequency Polygon")
+plot2 <- vehicles %>% 
+  ggplot(aes(x = price)) + 
+  geom_histogram() + 
+  labs(title = "Histogram")
+plot3 <- vehicles %>% 
+  ggplot(aes(x = price)) + 
+  geom_density() + 
+  labs(title = "Density Plot")
+plot4 <- vehicles %>% 
+  ggplot(aes(x = price)) + 
+  geom_boxplot() + 
+  labs(title = "Box Plot")
+(plot1 + plot2) / (plot3 + plot4)
+```
 
-## Citations
+Based on these plots, it was difficult to see the distribution because the distribution was so skewed to the right. I decided to see if I could filter out any potential outliers to make it easier to see the distribution. I first looked at how many vehicles were priced at over $100,000, since this seemed like a price would be considered an outlier among used cars.
 
-Used Cars Dataset: https://www.kaggle.com/austinreese/craigslist-carstrucks-data
+```{r}
+vehicles %>% 
+  filter(price > 100000) %>% 
+  count()
+```
+
+Only 596 vehicles out of over 458,000 listings were priced at above $100,000. This implied that cars listed for more than $100,000 were clearly outliers. 
+
+I also decided to look at how many listings were priced at below $1,000. This is because earlier, I had gone on Craiglist to look at cars priced below $1,000 and discovered that many of these listings were for cars that could be paid off in monthly increments of a few hundred dollars. Since these monthly prices do not reflect the full value of the car, I decided it would be a good idea to filter these out. I decided to see how many listings would be taken out by this filter.
+
+```{r}
+vehicles %>% 
+  filter(price < 1000) %>% 
+  count()
+```
+
+More than 48,000 listings fell into this price range. This seemed like a high number, so I decided to look further into this subset of the data. I looked at the number of cars priced at $0.
+
+```{r}
+vehicles %>% 
+  filter(price == 0) %>% 
+  count()
+```
+
+More than 33,000 listings were priced at $0. Upon looking at such listings on Craigslist, I discovered that almost all of these listings were from people who were hiding the real price of the car. In other words, they set the price to $0, and then inside the description, they would include a link to a different website which had the actual price of the car.
+
+Based on these analyses, I decided that listings priced below $1,000 or above $100,000 were outliers. Thus, I looked at the distribution of `price` again after filtering out these outliers.
+
+```{r, message=FALSE, warning=FALSE}
+plot1 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  ggplot(aes(x = price)) + 
+  geom_freqpoly() + 
+  labs(title = "Frequency Polygon")
+plot2 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  ggplot(aes(x = price)) + 
+  geom_histogram() + 
+  labs(title = "Histogram")
+plot3 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  ggplot(aes(x = price)) + 
+  geom_density() + 
+  labs(title = "Density Plot")
+plot4 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  ggplot(aes(x = price)) + 
+  geom_boxplot() + 
+  labs(title = "Box Plot")
+(plot1 + plot2) / (plot3 + plot4)
+```
+
+The distribution was easier to see than before, but it was still skewed to the right. Because of this, I decided to log transform `price` and look at the distribution again.
+
+```{r, message=FALSE, warning=FALSE}
+plot1 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_freqpoly() + 
+  labs(title = "Frequency Polygon")
+plot2 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_histogram() + 
+  labs(title = "Histogram")
+plot3 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_density() + 
+  labs(title = "Density Plot")
+plot4 <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_boxplot() + 
+  labs(title = "Box Plot")
+(plot1 + plot2) / (plot3 + plot4)
+```
+
+This distribution looked much more normal, and the boxplot showed no outliers. Therefore, I decided to filter out the outliers from the `vehicles` data set and log transform `price`.
+
+```{r}
+vehicles <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price))
+```
+
+The next thing I wanted to inspect was the correlation of the numeric x-variables (`year`, `odometer`, `lat`, and `long`) with `price` to see if any of them would be useful predictors that could be included in the model recipes. I used `stats::cor()` to create a correlation table for these variables, making sure to filter out listings with `price` greater than $1000 and and `price` less than $100,000.
+
+```{r}
+vehicles %>% 
+  mutate(price = (10 ^ price)) %>% 
+  select(price, year, odometer, lat, long) %>% 
+  cor(use = "complete.obs")
+```
+
+From these results it was apparent that the only variable that had a correlation with `price` (albeit a small one) was year. The other variables essentially had no correlation. However, I wanted to see if there were unusual values in these variables that were decreasing their correlation with `price`. In particular, I wanted to look for unusual values in `year` and `odometer` as there cannot be unusual values for `lat` (latitude) and `long` (longitude) since they are simply geographical coordinates.
+
+I decided to first look at the distribution of `year` to see if there were any unusual values affecting its correlation with `price`.
+
+```{r}
+vehicles %>% 
+  mutate(price = (10 ^ price)) %>% 
+  ggplot(aes(year)) + 
+  geom_boxplot() + 
+  labs(title = "Distribution of Year")
+```
+
+From the boxplot, it was clear that there were many outliers, and these outliers were from years prior to roughly 1993.
+
+I then looked at the distribution of `odometer` to see if there were any unusual values affective its correlation with `price`.
+
+```{r}
+vehicles %>% 
+  mutate(price = (10 ^ price)) %>% 
+  ggplot(aes(odometer)) + 
+  geom_boxplot() + 
+  labs(title = "Distribution of Odometer")
+```
+
+From the boxplot, it was clear that there were a few extremely large outliers, which made it difficult to see if there were less extreme outliers. However, I knew that most cars start to fall apart when they reach 250,000-300,000 miles, so I decided to see how many cars in the data set had over 300,000 miles on their `odometer`.
+
+```{r}
+vehicles %>% 
+  mutate(price = (10 ^ price)) %>% 
+  filter(odometer > 300000) %>% 
+  count()
+```
+
+Only 2,154 listings out of the 400,000+ listings had an odometer with over 300,000 miles. Therefore, I considered these as outliers.
+
+Having found the unusual values in `year` and `odometer` that may have been decreasing their correlation with `price`, I created a new correlation table in which I filtered out the unusual values.
+
+```{r}
+vehicles %>% 
+  mutate(price = (10 ^ price)) %>% 
+  filter(odometer < 300000) %>% 
+  filter(year > 1993) %>% 
+  select(price, year, odometer, lat, long) %>% 
+  cor(use = "complete.obs")
+```
+
+Based on these results, it was clear that `year` and `odometer` actualy have moderate correlations with `price`. In other words, they seemed like useful predictors that could be included in the model recipes.
+
+Furthermore, the EDA revealed that `year` and `odometer` had notable outliers that should be removed from the `vehicles` data set. Thus, I used the following code to remove these outliers from `vehicles`.
+
+```{r}
+vehicles <- vehicles %>% 
+  filter(odometer < 300000) %>% 
+  filter(year > 1993)
+```
