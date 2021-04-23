@@ -1,6 +1,6 @@
 ---
-title: "submission"
-author: "Joshua Levitas"
+title: "Some EDA Plots"
+author: "Datasciencecool group"
 date: "3/19/2021"
 output: html_document
 ---
