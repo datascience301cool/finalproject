@@ -106,3 +106,10 @@ knn_tune <- knn_workflow %>%
 save(knn_tune, knn_workflow, file = "model_info/knn_tune.rda")
 
 knn_tune
+
+vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
+  step_medianimpute(year, odometer) %>% 
+  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_dummy(all_nominal(), one_hot = TRUE) %>% 
+  step_normalize(all_predictors())
