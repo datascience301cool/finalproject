@@ -14,6 +14,7 @@
 # Load package(s) ----
 library(tidyverse)
 library(tidymodels)
+library(splitstackshape)
 
 # Seed
 set.seed(2021)
@@ -51,7 +52,7 @@ save(vehicles, file = "data/vehicles.rda")
 
 vehicles_strat <- vehicles %>% 
   stratified("price", 0.05)
-save(vehicles, file = "data/vehicles_strat.rda")
+save(vehicles_strat, file = "data/vehicles_strat.rda")
 
 vehicle_split <- vehicle_data %>%
   initial_split(prop = .8, strata = price)
