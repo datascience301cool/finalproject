@@ -1,0 +1,802 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+  \usepackage{amssymb}
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Data Memo},
+  pdfauthor={Edwin Chalas Cuevas, Preston Chan, Lauren Caldrone, Joshua Levitas},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Data Memo}
+\author{Edwin Chalas Cuevas, Preston Chan, Lauren Caldrone, Joshua
+Levitas}
+\date{4/21/2021}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{read-in-the-data}{%
+\subsection{Read In the Data}\label{read-in-the-data}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"data/vehicles.csv"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{clean\_names}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## -- Column specification --------------------------------------------------------
+## cols(
+##   .default = col_character(),
+##   id = col_double(),
+##   price = col_double(),
+##   year = col_double(),
+##   odometer = col_double(),
+##   county = col_logical(),
+##   lat = col_double(),
+##   long = col_double()
+## )
+## i Use `spec()` for the full column specifications.
+\end{verbatim}
+
+\hypertarget{eda}{%
+\subsection{EDA}\label{eda}}
+
+Before beginning the EDA, I simplified the data set by removing
+irrelevant columns These columns include things likethe URL to the
+listing, the listing ID, the url to the listing's image, etc. These
+columns will have no predictive power.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\FunctionTok{c}\NormalTok{(id, url, region\_url, vin, image\_url, description))}
+\end{Highlighting}
+\end{Shaded}
+
+After doing this, I began the EDA by performing an assurance check of
+the data using \texttt{skimr::skim\_without\_charts()}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{skimr}\SpecialCharTok{::}\FunctionTok{skim\_without\_charts}\NormalTok{(vehicles)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}ll@{}}
+\caption{Data summary}\tabularnewline
+\toprule
+\endhead
+Name & vehicles\tabularnewline
+Number of rows & 441396\tabularnewline
+Number of columns & 19\tabularnewline
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ &\tabularnewline
+Column type frequency: &\tabularnewline
+character & 13\tabularnewline
+logical & 1\tabularnewline
+numeric & 5\tabularnewline
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ &\tabularnewline
+Group variables & None\tabularnewline
+\bottomrule
+\end{longtable}
+
+\textbf{Variable type: character}
+
+\begin{longtable}[]{@{}lrrrrrrr@{}}
+\toprule
+skim\_variable & n\_missing & complete\_rate & min & max & empty &
+n\_unique & whitespace\tabularnewline
+\midrule
+\endhead
+region & 0 & 1.00 & 4 & 26 & 0 & 404 & 0\tabularnewline
+manufacturer & 18377 & 0.96 & 3 & 15 & 0 & 42 & 0\tabularnewline
+model & 5338 & 0.99 & 1 & 203 & 0 & 30083 & 0\tabularnewline
+condition & 183842 & 0.58 & 3 & 9 & 0 & 6 & 0\tabularnewline
+cylinders & 188165 & 0.57 & 5 & 12 & 0 & 8 & 0\tabularnewline
+fuel & 2881 & 0.99 & 3 & 8 & 0 & 5 & 0\tabularnewline
+title\_status & 8945 & 0.98 & 4 & 10 & 0 & 6 & 0\tabularnewline
+transmission & 2627 & 0.99 & 5 & 9 & 0 & 3 & 0\tabularnewline
+drive & 133649 & 0.70 & 3 & 3 & 0 & 3 & 0\tabularnewline
+size & 315584 & 0.29 & 7 & 11 & 0 & 4 & 0\tabularnewline
+type & 95349 & 0.78 & 3 & 11 & 0 & 13 & 0\tabularnewline
+paint\_color & 133022 & 0.70 & 3 & 6 & 0 & 12 & 0\tabularnewline
+state & 0 & 1.00 & 2 & 2 & 0 & 51 & 0\tabularnewline
+\bottomrule
+\end{longtable}
+
+\textbf{Variable type: logical}
+
+\begin{longtable}[]{@{}lrrrl@{}}
+\toprule
+skim\_variable & n\_missing & complete\_rate & mean &
+count\tabularnewline
+\midrule
+\endhead
+county & 441396 & 0 & NaN & :\tabularnewline
+\bottomrule
+\end{longtable}
+
+\textbf{Variable type: numeric}
+
+\begin{longtable}[]{@{}lrrrrrrrrr@{}}
+\toprule
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedright
+skim\_variable\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+n\_missing\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedleft
+complete\_rate\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+mean\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.11}}\raggedleft
+sd\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.07}}\raggedleft
+p0\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+p25\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+p50\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+p75\strut
+\end{minipage} &
+\begin{minipage}[b]{(\columnwidth - 9\tabcolsep) * \real{0.12}}\raggedleft
+p100\strut
+\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedright
+price\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+0\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedleft
+1.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+64002.19\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.11}}\raggedleft
+11092408.53\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.07}}\raggedleft
+0.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+5950.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+13477.50\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+24999.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.12}}\raggedleft
+3.736929e+09\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedright
+year\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+1037\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedleft
+1.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+2011.49\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.11}}\raggedleft
+9.27\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.07}}\raggedleft
+1900.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+2009.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+2014.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+2017.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.12}}\raggedleft
+2.022000e+03\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedright
+odometer\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+4378\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedleft
+0.99\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+225255.58\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.11}}\raggedleft
+16015357.75\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.07}}\raggedleft
+0.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+39427.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+85000.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+131000.00\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.12}}\raggedleft
+2.000799e+09\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedright
+lat\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+6727\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedleft
+0.98\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+38.47\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.11}}\raggedleft
+5.86\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.07}}\raggedleft
+-73.08\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+34.43\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+39.16\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+42.35\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.12}}\raggedleft
+8.462000e+01\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedright
+long\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+6727\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.13}}\raggedleft
+0.98\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+-94.57\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.11}}\raggedleft
+18.24\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.07}}\raggedleft
+-175.32\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+-111.80\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.08}}\raggedleft
+-88.17\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.09}}\raggedleft
+-80.83\strut
+\end{minipage} &
+\begin{minipage}[t]{(\columnwidth - 9\tabcolsep) * \real{0.12}}\raggedleft
+1.738900e+02\strut
+\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+The main takeaway from the results was that a large handful of the
+variables had missingness, which was not surprising considering the
+massive size of the data set. Some of the variables that seemed to be
+important predictors (based on my intuition) had a somewhat high
+proportion of missingness, namely \texttt{condition},
+\texttt{cylinders}, \texttt{drive}, \texttt{size}, and \texttt{type}.
+The proportion of missing values in these columns was 42\%, 37\%, 41\%,
+29\%, 70\%, and 25\%, respectively. Most of the other columns had very
+low missingness. Another thing I noticed was that \texttt{state} had 51
+unique vales and \texttt{region} had 405 unique values. I knew that this
+would cause an issue later on when creating a recipe and turning these
+variables into dummy variables since it would produce far too many
+columns, so I decided to classify the states into 5 regions:
+\texttt{northeast}, \texttt{southeast}, \texttt{midwest},
+\texttt{southwest}, and \texttt{west}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{state\_region =} 
+           \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{             state }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"wv"}\NormalTok{, }\StringTok{"va"}\NormalTok{, }\StringTok{"ky"}\NormalTok{, }\StringTok{"nc"}\NormalTok{, }\StringTok{"sc"}\NormalTok{, }\StringTok{"tn"}\NormalTok{, }\StringTok{"ar"}\NormalTok{, }\StringTok{"la"}\NormalTok{, }\StringTok{"al"}\NormalTok{, }\StringTok{"ms"}\NormalTok{, }\StringTok{"ga"}\NormalTok{, }\StringTok{"fl"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}} \StringTok{"southeast"}\NormalTok{, }
+\NormalTok{             state }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"me"}\NormalTok{, }\StringTok{"vt"}\NormalTok{, }\StringTok{"nh"}\NormalTok{, }\StringTok{"ma"}\NormalTok{, }\StringTok{"ct"}\NormalTok{, }\StringTok{"ri"}\NormalTok{, }\StringTok{"ny"}\NormalTok{, }\StringTok{"nj"}\NormalTok{, }\StringTok{"pa"}\NormalTok{, }\StringTok{"de"}\NormalTok{, }\StringTok{"md"}\NormalTok{, }\StringTok{"dc"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}} \StringTok{"northeast"}\NormalTok{, }
+\NormalTok{             state }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"nd"}\NormalTok{, }\StringTok{"sd"}\NormalTok{, }\StringTok{"mn"}\NormalTok{, }\StringTok{"wi"}\NormalTok{, }\StringTok{"ia"}\NormalTok{, }\StringTok{"ne"}\NormalTok{, }\StringTok{"ks"}\NormalTok{, }\StringTok{"mo"}\NormalTok{, }\StringTok{"il"}\NormalTok{, }\StringTok{"in"}\NormalTok{, }\StringTok{"mi"}\NormalTok{, }\StringTok{"oh"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}} \StringTok{"midwest"}\NormalTok{, }
+\NormalTok{             state }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"ok"}\NormalTok{, }\StringTok{"tx"}\NormalTok{, }\StringTok{"nm"}\NormalTok{, }\StringTok{"az"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}} \StringTok{"southwest"}\NormalTok{, }
+\NormalTok{             state }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\StringTok{"ak"}\NormalTok{, }\StringTok{"hi"}\NormalTok{, }\StringTok{"wa"}\NormalTok{, }\StringTok{"or"}\NormalTok{, }\StringTok{"id"}\NormalTok{, }\StringTok{"mt"}\NormalTok{, }\StringTok{"wy"}\NormalTok{, }\StringTok{"co"}\NormalTok{, }\StringTok{"ut"}\NormalTok{, }\StringTok{"nv"}\NormalTok{, }\StringTok{"ca"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}} \StringTok{"west"}
+\NormalTok{           )}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+I also noticed that many variables that should be classified as factor
+variables were classified as character variables. I easily fixed this
+with the following code.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{condition =} \FunctionTok{factor}\NormalTok{(condition)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{cylinders =} \FunctionTok{factor}\NormalTok{(cylinders)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{fuel =} \FunctionTok{factor}\NormalTok{(fuel)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{title\_status =} \FunctionTok{factor}\NormalTok{(title\_status)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{transmission =} \FunctionTok{factor}\NormalTok{(transmission)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{drive =} \FunctionTok{factor}\NormalTok{(drive)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{size =} \FunctionTok{factor}\NormalTok{(size)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{type =} \FunctionTok{factor}\NormalTok{(type)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{paint\_color =} \FunctionTok{factor}\NormalTok{(paint\_color)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{state\_region =} \FunctionTok{factor}\NormalTok{(state\_region)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{manufacturer =} \FunctionTok{factor}\NormalTok{(manufacturer))}
+\end{Highlighting}
+\end{Shaded}
+
+With the basic data cleaning done, I proceeded to conduct an EDA on the
+data. I started by focusing on the outcome variable, \texttt{price}. I
+first inspected its distribution.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{plot1 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_freqpoly}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Frequency Polygon"}\NormalTok{)}
+\NormalTok{plot2 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_histogram}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Histogram"}\NormalTok{)}
+\NormalTok{plot3 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_density}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Density Plot"}\NormalTok{)}
+\NormalTok{plot4 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Box Plot"}\NormalTok{)}
+\NormalTok{(plot1 }\SpecialCharTok{+}\NormalTok{ plot2) }\SpecialCharTok{/}\NormalTok{ (plot3 }\SpecialCharTok{+}\NormalTok{ plot4)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{data_EDA_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+Based on these plots, it was difficult to see the distribution because
+the distribution was so skewed to the right. I decided to see if I could
+filter out any potential outliers to make it easier to see the
+distribution. I first looked at how many vehicles were priced at over
+\$100,000, since this seemed like a price would be considered an outlier
+among used cars.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 1
+##       n
+##   <int>
+## 1   691
+\end{verbatim}
+
+Only 596 vehicles out of over 458,000 listings were priced at above
+\$100,000. This implied that cars listed for more than \$100,000 were
+clearly outliers.
+
+I also decided to look at how many listings were priced at below
+\$1,000. This is because earlier, I had gone on Craiglist to look at
+cars priced below \$1,000 and discovered that many of these listings
+were for cars that could be paid off in monthly increments of a few
+hundred dollars. Since these monthly prices do not reflect the full
+value of the car, I decided it would be a good idea to filter these out.
+I decided to see how many listings would be taken out by this filter.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textless{}} \DecValTok{1000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 1
+##       n
+##   <int>
+## 1 48206
+\end{verbatim}
+
+More than 48,000 listings fell into this price range. This seemed like a
+high number, so I decided to look further into this subset of the data.
+I looked at the number of cars priced at \$0.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 1
+##       n
+##   <int>
+## 1 34089
+\end{verbatim}
+
+More than 33,000 listings were priced at \$0. Upon looking at such
+listings on Craigslist, I discovered that almost all of these listings
+were from people who were hiding the real price of the car. In other
+words, they set the price to \$0, and then inside the description, they
+would include a link to a different website which had the actual price
+of the car.
+
+Based on these analyses, I decided that listings priced below \$1,000 or
+above \$100,000 were outliers. Thus, I looked at the distribution of
+\texttt{price} again after filtering out these outliers.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{plot1 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_freqpoly}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Frequency Polygon"}\NormalTok{)}
+\NormalTok{plot2 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_histogram}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Histogram"}\NormalTok{)}
+\NormalTok{plot3 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_density}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Density Plot"}\NormalTok{)}
+\NormalTok{plot4 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Box Plot"}\NormalTok{)}
+\NormalTok{(plot1 }\SpecialCharTok{+}\NormalTok{ plot2) }\SpecialCharTok{/}\NormalTok{ (plot3 }\SpecialCharTok{+}\NormalTok{ plot4)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{data_EDA_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+The distribution was easier to see than before, but it was still skewed
+to the right. Because of this, I decided to log transform \texttt{price}
+and look at the distribution again.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{plot1 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =} \FunctionTok{log10}\NormalTok{(price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_freqpoly}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Frequency Polygon"}\NormalTok{)}
+\NormalTok{plot2 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =} \FunctionTok{log10}\NormalTok{(price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_histogram}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Histogram"}\NormalTok{)}
+\NormalTok{plot3 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =} \FunctionTok{log10}\NormalTok{(price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_density}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Density Plot"}\NormalTok{)}
+\NormalTok{plot4 }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =} \FunctionTok{log10}\NormalTok{(price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ price)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Box Plot"}\NormalTok{)}
+\NormalTok{(plot1 }\SpecialCharTok{+}\NormalTok{ plot2) }\SpecialCharTok{/}\NormalTok{ (plot3 }\SpecialCharTok{+}\NormalTok{ plot4)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{data_EDA_files/figure-latex/unnamed-chunk-11-1.pdf}
+
+This distribution looked much more normal, and the boxplot showed no
+outliers. Therefore, I decided to filter out the outliers from the
+\texttt{vehicles} data set and log transform \texttt{price}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(price }\SpecialCharTok{\textgreater{}} \DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ price }\SpecialCharTok{\textless{}} \DecValTok{100000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =} \FunctionTok{log10}\NormalTok{(price))}
+\end{Highlighting}
+\end{Shaded}
+
+The next thing I wanted to inspect was the correlation of the numeric
+x-variables (\texttt{year}, \texttt{odometer}, \texttt{lat}, and
+\texttt{long}) with \texttt{price} to see if any of them would be useful
+predictors that could be included in the model recipes. I used
+\texttt{stats::cor()} to create a correlation table for these variables,
+making sure to filter out listings with \texttt{price} greater than
+\$1000 and and \texttt{price} less than \$100,000.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =}\NormalTok{ (}\DecValTok{10} \SpecialCharTok{\^{}}\NormalTok{ price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(price, year, odometer, lat, long) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{cor}\NormalTok{(}\AttributeTok{use =} \StringTok{"complete.obs"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                 price         year     odometer          lat        long
+## price     1.000000000  0.355917437  0.002151397 -0.009935894 -0.09131840
+## year      0.355917437  1.000000000  0.003344989 -0.004537745  0.00414594
+## odometer  0.002151397  0.003344989  1.000000000 -0.003164886  0.00376453
+## lat      -0.009935894 -0.004537745 -0.003164886  1.000000000 -0.13191087
+## long     -0.091318397  0.004145940  0.003764530 -0.131910873  1.00000000
+\end{verbatim}
+
+From these results it was apparent that the only variable that had a
+correlation with \texttt{price} (albeit a small one) was year. The other
+variables essentially had no correlation. However, I wanted to see if
+there were unusual values in these variables that were decreasing their
+correlation with \texttt{price}. In particular, I wanted to look for
+unusual values in \texttt{year} and \texttt{odometer} as there cannot be
+unusual values for \texttt{lat} (latitude) and \texttt{long} (longitude)
+since they are simply geographical coordinates.
+
+I decided to first look at the distribution of \texttt{year} to see if
+there were any unusual values affecting its correlation with
+\texttt{price}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =}\NormalTok{ (}\DecValTok{10} \SpecialCharTok{\^{}}\NormalTok{ price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(year)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Distribution of Year"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Removed 1012 rows containing non-finite values (stat_boxplot).
+\end{verbatim}
+
+\includegraphics{data_EDA_files/figure-latex/unnamed-chunk-14-1.pdf}
+
+From the boxplot, it was clear that there were many outliers, and these
+outliers were from years prior to roughly 1993.
+
+I then looked at the distribution of \texttt{odometer} to see if there
+were any unusual values affective its correlation with \texttt{price}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =}\NormalTok{ (}\DecValTok{10} \SpecialCharTok{\^{}}\NormalTok{ price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(odometer)) }\SpecialCharTok{+} 
+  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+} 
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Distribution of Odometer"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Removed 2278 rows containing non-finite values (stat_boxplot).
+\end{verbatim}
+
+\includegraphics{data_EDA_files/figure-latex/unnamed-chunk-15-1.pdf}
+
+From the boxplot, it was clear that there were a few extremely large
+outliers, which made it difficult to see if there were less extreme
+outliers. However, I knew that most cars start to fall apart when they
+reach 250,000-300,000 miles, so I decided to see how many cars in the
+data set had over 300,000 miles on their \texttt{odometer}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =}\NormalTok{ (}\DecValTok{10} \SpecialCharTok{\^{}}\NormalTok{ price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(odometer }\SpecialCharTok{\textgreater{}} \DecValTok{300000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 1
+##       n
+##   <int>
+## 1  2428
+\end{verbatim}
+
+Only 2,154 listings out of the 400,000+ listings had an odometer with
+over 300,000 miles. Therefore, I considered these as outliers.
+
+Having found the unusual values in \texttt{year} and \texttt{odometer}
+that may have been decreasing their correlation with \texttt{price}, I
+created a new correlation table in which I filtered out the unusual
+values.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =}\NormalTok{ (}\DecValTok{10} \SpecialCharTok{\^{}}\NormalTok{ price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(odometer }\SpecialCharTok{\textless{}} \DecValTok{300000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{\textgreater{}} \DecValTok{1993}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(price, year, odometer, lat, long) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{cor}\NormalTok{(}\AttributeTok{use =} \StringTok{"complete.obs"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                 price        year    odometer          lat        long
+## price     1.000000000  0.59629591 -0.54804074 -0.009168215 -0.09662794
+## year      0.596295910  1.00000000 -0.65748498 -0.025896601 -0.01945802
+## odometer -0.548040745 -0.65748498  1.00000000  0.030680238  0.03442845
+## lat      -0.009168215 -0.02589660  0.03068024  1.000000000 -0.13400554
+## long     -0.096627944 -0.01945802  0.03442845 -0.134005543  1.00000000
+\end{verbatim}
+
+Based on these results, it was clear that \texttt{year} and
+\texttt{odometer} actualy have moderate correlations with
+\texttt{price}. In other words, they seemed like useful predictors that
+could be included in the model recipes.
+
+Furthermore, the EDA revealed that \texttt{year} and \texttt{odometer}
+had notable outliers that should be removed from the \texttt{vehicles}
+data set. Thus, I used the following code to remove these outliers from
+\texttt{vehicles}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vehicles }\OtherTok{\textless{}{-}}\NormalTok{ vehicles }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(odometer }\SpecialCharTok{\textless{}} \DecValTok{300000}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{\textgreater{}} \DecValTok{1993}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+
+\end{document}

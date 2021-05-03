@@ -5,9 +5,11 @@ date: "4/21/2021"
 output:
   html_document:
     code_folding: hide
-    toc: true
-    toc_float: true
-    highlight: "tango"
+    toc: yes
+    toc_float: yes
+    highlight: tango
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE}
@@ -27,8 +29,13 @@ set.seed(57)
 ## Read In the Data
 
 ```{r}
-vehicles <- read_csv("data/vehicles.csv") %>% 
-  clean_names()
+
+#vehicles <- read_csv("data/vehicles.csv") %>% 
+#  clean_names()
+
+#save(vehicles, file = "data/vehicles.rda")
+
+load(file = "data/vehicles.rda")
 ```
 
 ## EDA
@@ -37,7 +44,7 @@ Before beginning the EDA, I simplified the data set by removing irrelevant colum
 
 ```{r}
 vehicles <- vehicles %>% 
-  select(-c(x1, id, url, region_url, vin, image_url, description, posting_date))
+  select(-c(id, url, region_url, vin, image_url, description))
 ```
 
 After doing this, I began the EDA by performing an assurance check of the data using `skimr::skim_without_charts()`. 
