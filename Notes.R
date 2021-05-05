@@ -65,6 +65,14 @@ vehicle_recipe <- recipe(price ~ ., data = vehicle_strat) %>%
   step_center(all_predictors()) %>%
   step_scale(all_predictors())
 
+# Preston's recipe
+vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
+  step_medianimpute(year, odometer) %>% 
+  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_dummy(all_nominal(), one_hot = TRUE) %>% 
+  step_normalize(all_predictors())
+
 # load required objects ----
 #load("model_info/wildfires_setup.rda")
 
@@ -107,9 +115,49 @@ save(knn_tune, knn_workflow, file = "model_info/knn_tune.rda")
 
 knn_tune
 
-vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
-  step_medianimpute(year, odometer) %>% 
-  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
-  step_nzv(all_predictors()) %>% 
-  step_dummy(all_nominal(), one_hot = TRUE) %>% 
-  step_normalize(all_predictors())
+
+
+
+
+
+
+
+### ELASTIC NET
+
+# Define Model
+en_model <- logistic_reg(
+  mode = "classification",
+  penalty = tune(),
+  mixture = tune()
+) %>%
+  set_engine("glmnet")
+
+# Tuning Grid
+en_params <- parameters(en_model)
+
+# Define Tuning Grid
+en_grid <- grid_regular(en_params, levels = 5)
+
+# Workflow
+en_workflow <- workflow() %>%
+  add_model(en_model) %>%
+  add_recipe(vehicles_recipe)
+
+# Tuning/fitting ----
+
+en_tuned <- en_workflow %>% 
+  tune_grid(model_folds, grid = en_grid)
+
+# save files
+write_rds(en_tuned, "en_result.rds")
+
+save(en_tuned, en_workflow, file = "model_info/en_tuned.rds")
+
+# results
+en_workflow_tuned <- en_workflow %>% 
+  finalize_workflow(select_best(en_tuned, metrics = class_metrics))
+
+en_results <- fit(en_workflow_tuned, vehicle_train)
+
+
+
