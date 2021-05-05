@@ -124,6 +124,8 @@ knn_tune
 
 ### ELASTIC NET
 
+#New recipe
+
 # Define Model
 en_model <- logistic_reg(
   mode = "classification",
