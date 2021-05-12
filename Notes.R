@@ -55,19 +55,19 @@ vehicles_strat <- vehicles %>%
 
 save(vehicles_strat, file = "data/vehicles_strat.rda")
 
-vehicle_split <- vehicle_strat %>%
+vehicle_split <- vehicles_strat %>%
   initial_split(prop = .8, strata = price)
 
 vehicle_train <- training(vehicle_split)
 
 vehicle_test <- testing(vehicle_split)
 
-vehicle_recipe <- recipe(price ~ ., data = vehicle_strat) %>%
+vehicle_recipe <- recipe(price ~ ., data = vehicles_strat) %>%
   step_center(all_predictors()) %>%
   step_scale(all_predictors())
 
 # Preston's recipe
-vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
+vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
   step_medianimpute(year, odometer) %>% 
   step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
   step_nzv(all_predictors()) %>% 
