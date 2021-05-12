@@ -165,4 +165,11 @@ en_workflow_tuned <- en_workflow %>%
 en_results <- fit(en_workflow_tuned, vehicle_train)
 
 
+#NEURAL NET
+
+mlp_model <- mlp(hidden_units = tune(), penalty = tune()) %>% 
+  set_engine("nnet", trace = 0) %>% 
+  set_mode("regression")
+
+
 
