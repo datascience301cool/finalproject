@@ -50,10 +50,12 @@ load(file = "data/vehicles.rda")
 # 
 # save(vehicles, file = "data/vehicles.rda")
 
-vehicles_strat <- vehicles %>% 
-  stratified("price", 0.05)
+#vehicles_strat <- vehicles %>% 
+#  stratified("price", 0.05)
 
-save(vehicles_strat, file = "data/vehicles_strat.rda")
+load(file = "data/vehicles_strat.rda")
+
+#save(vehicles_strat, file = "data/vehicles_strat.rda")
 
 vehicle_split <- vehicles_strat %>%
   initial_split(prop = .8, strata = price)
