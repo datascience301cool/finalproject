@@ -69,18 +69,24 @@ vehicle_recipe <- recipe(price ~ ., data = vehicles_strat) %>%
   step_scale(all_predictors())
 
 # Preston's recipe
-vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
-  step_medianimpute(year, odometer) %>% 
-  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+vehicle_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
+  step_impute_median(year, odometer) %>% 
+  step_impute_mode(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
   step_nzv(all_predictors()) %>% 
   step_dummy(all_nominal(), one_hot = TRUE) %>% 
+  step_zv(all_predictors()) %>% 
   step_normalize(all_predictors())
+
+vehicle_recipe %>% prep(vehicle_train) %>% bake(new_data = NULL)
 
 # load required objects ----
 #load("model_info/wildfires_setup.rda")
 
 #tuning
 model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3)
+
+# save tuning objects
+save(model_folds, vehicle_recipe, vehicle_split, file = "data/vehicle_setup.rda")
 
 # Define model ----
 knn_model <- nearest_neighbor(

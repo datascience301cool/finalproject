@@ -9,7 +9,7 @@ library(tidymodels)
 set.seed(57)
 
 # Load required objects
-load("data/vehicles_setup.rda")
+load("data/vehicle_setup.rda")
 
 # Define model
 rf_model <- rand_forest(
@@ -32,12 +32,12 @@ rf_grid <- grid_regular(rf_params, levels = 5)
 # Random forest workflow
 rf_workflow <- workflow() %>% 
   add_model(rf_model) %>% 
-  add_recipe(vehicles_recipe)
+  add_recipe(vehicle_recipe)
 
 # Tuning/fitting
 rf_tune <- rf_workflow %>% 
   tune_grid(
-    resamples = vehicles_fold, 
+    resamples = model_folds, 
     grid = rf_grid
   )
 
