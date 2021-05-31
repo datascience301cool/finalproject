@@ -21,7 +21,7 @@ set.seed(2021)
 
 load(file = "data/vehicles.rda")
 vehicles <- vehicles %>% 
-  clean_names() %>%
+  janitor::clean_names() %>%
   select(-c(id, url, region_url, vin, image_url, description)) %>%
   mutate(state_region = 
            case_when(
@@ -54,7 +54,7 @@ vehicles_strat <- vehicles %>%
   stratified("price", 0.05)
 save(vehicles_strat, file = "data/vehicles_strat.rda")
 
-vehicle_split <- vehicle_data %>%
+vehicle_split <- vehicles_strat %>%
   initial_split(prop = .8, strata = price)
 
 vehicle_train <- training(vehicle_split)
@@ -66,7 +66,7 @@ vehicle_recipe <- recipe(price ~ ., data = vehicle_strat) %>%
   step_scale(all_predictors())
 
 # Preston's recipe
-vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
+vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
   step_medianimpute(year, odometer) %>% 
   step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
   step_nzv(all_predictors()) %>% 
