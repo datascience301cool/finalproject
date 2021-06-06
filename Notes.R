@@ -57,6 +57,8 @@ load(file = "data/vehicles_strat.rda")
 
 #save(vehicles_strat, file = "data/vehicles_strat.rda")
 
+set.seed(57)
+
 vehicle_split <- vehicles_strat %>%
   initial_split(prop = .8, strata = price)
 
@@ -68,14 +70,45 @@ vehicle_recipe <- recipe(price ~ ., data = vehicles_strat) %>%
   step_center(all_predictors()) %>%
   step_scale(all_predictors())
 
+# Data inspection for recipe
+skimr::skim_without_charts(vehicle_train)
+
+vehicle_train %>% 
+  select(price, year, odometer, lat, long) %>% 
+  cor(use = "complete.obs")
+
+vehicle_train %>% 
+  ggplot(aes(manufacturer, price)) + 
+  geom_point()
+
+vehicle_train %>% 
+  ggplot(aes(fuel, price)) + 
+  geom_point()
+
+vehicle_train %>% 
+  ggplot(aes(title_status, price)) + 
+  geom_point()
+
+vehicle_train %>% 
+  ggplot(aes(transmission, price)) + 
+  geom_point()
+
+vehicle_train %>% 
+  ggplot(aes(type, price)) + 
+  geom_point()
+
+vehicle_train %>% 
+  ggplot(aes(state_region, price)) + 
+  geom_point()
+
 # Preston's recipe
-vehicle_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
+vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicle_train) %>% 
   step_impute_median(year, odometer) %>% 
-  step_impute_mode(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
-  step_nzv(all_predictors()) %>% 
+  step_impute_mode(manufacturer, fuel, title_status, transmission) %>% 
+  step_other(all_nominal(), -transmission, -fuel) %>% 
   step_dummy(all_nominal(), one_hot = TRUE) %>% 
   step_zv(all_predictors()) %>% 
-  step_normalize(all_predictors())
+  step_normalize(all_numeric(), -all_outcomes())
 
 vehicle_recipe %>% prep(vehicle_train) %>% bake(new_data = NULL)
 

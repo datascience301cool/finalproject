@@ -4,6 +4,7 @@
 # Load packages
 library(tidyverse)
 library(tidymodels)
+library(vip)
 
 # Set seed
 set.seed(57)
@@ -24,7 +25,7 @@ rf_model <- rand_forest(
 
 # Set-up tuning grid
 rf_params <- parameters(rf_model) %>% 
-  update(mtry = mtry(range = c(2, 15)))
+  update(mtry = mtry(range = c(2, 17)))
 
 # Define grid
 rf_grid <- grid_regular(rf_params, levels = 5)
