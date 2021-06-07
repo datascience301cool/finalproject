@@ -110,7 +110,7 @@ vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_s
   step_zv(all_predictors()) %>% 
   step_normalize(all_numeric(), -all_outcomes())
 
-vehicle_recipe %>% prep(vehicle_train) %>% bake(new_data = NULL)
+vehicle_recipe %>% prep(vehicle_train) %>% bake(new_data = NULL) %>% view()
 
 # load required objects ----
 #load("model_info/wildfires_setup.rda")
@@ -169,8 +169,8 @@ knn_tune
 #New recipe
 
 # Define Model
-en_model <- logistic_reg(
-  mode = "classification",
+en_model <- linear_reg(
+  mode = "regression",
   penalty = tune(),
   mixture = tune()
 ) %>%
@@ -185,12 +185,15 @@ en_grid <- grid_regular(en_params, levels = 5)
 # Workflow
 en_workflow <- workflow() %>%
   add_model(en_model) %>%
-  add_recipe(vehicles_recipe)
+  add_recipe(vehicle_recipe)
 
 # Tuning/fitting ----
 
 en_tuned <- en_workflow %>% 
-  tune_grid(model_folds, grid = en_grid)
+  tune_grid(
+    resamples = model_folds, 
+    grid = en_grid
+  )
 
 # save files
 write_rds(en_tuned, "en_result.rds")
