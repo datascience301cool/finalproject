@@ -202,54 +202,6 @@ knn_tune
 
 
 
-
-
-
-
-
-### ELASTIC NET
-
-#New recipe
-
-# Define Model
-en_model <- linear_reg(
-  mode = "regression",
-  penalty = tune(),
-  mixture = tune()
-) %>%
-  set_engine("glmnet")
-
-# Tuning Grid
-en_params <- parameters(en_model)
-
-# Define Tuning Grid
-en_grid <- grid_regular(en_params, levels = 5)
-
-# Workflow
-en_workflow <- workflow() %>%
-  add_model(en_model) %>%
-  add_recipe(vehicle_recipe)
-
-# Tuning/fitting ----
-
-en_tuned <- en_workflow %>% 
-  tune_grid(
-    resamples = model_folds, 
-    grid = en_grid
-  )
-
-# save files
-write_rds(en_tuned, "en_result.rds")
-
-save(en_tuned, en_workflow, file = "model_info/en_tuned.rds")
-
-# results
-en_workflow_tuned <- en_workflow %>% 
-  finalize_workflow(select_best(en_tuned, metrics = class_metrics))
-
-en_results <- fit(en_workflow_tuned, vehicle_train)
-
-
 #NEURAL NET
 
 mlp_model <- mlp(hidden_units = tune(), penalty = tune()) %>% 
