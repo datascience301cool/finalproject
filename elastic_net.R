@@ -2,9 +2,6 @@
 library(tidyverse)
 library(tidymodels)
 library(splitstackshape)
-library(tictoc)
-library(earth)
-library(kernlab)
 
 # Seed
 set.seed(2021)
@@ -27,57 +24,53 @@ vehicle_train <- training(vehicle_split)
 
 vehicle_test <- testing(vehicle_split)
 
-# recipe
-vehicles_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicles_strat) %>% 
+# Preston's recipe
+vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
   step_medianimpute(year, odometer) %>% 
-  step_modeimpute(manufacturer, fuel, title_status, transmission) %>% 
-  step_other(all_nominal(), -transmission, -fuel) %>% 
+  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+  step_nzv(all_predictors()) %>% 
   step_dummy(all_nominal(), one_hot = TRUE) %>% 
-  step_zv(all_predictors()) %>% 
-  step_normalize(all_numeric(), -all_outcomes())
+  step_normalize(all_predictors())
 
 #tuning
 model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3)
 
+### ELASTIC NET
 
 # Define Model
-svmrb_model <- svm_rbf(
-  mode = "regression",
-  cost = tune(),
-  rbf_sigma = tune()
+en_model <- logistic_reg(
+  mode = "classification",
+  penalty = tune(),
+  mixture = tune()
 ) %>%
-  set_engine("kernlab")
+  set_engine("glmnet")
 
 # Tuning Grid
-svmrb_param <- parameters(svmrb_model) 
+en_params <- parameters(en_model)
 
 # Define Tuning Grid
-svmrb_grid <- grid_regular(svmrb_param, levels = 5)
+en_grid <- grid_regular(en_params, levels = 5)
 
 # Workflow
-svmrb_workflow <- workflow() %>% 
-  add_model(svmrb_model) %>% 
+en_workflow <- workflow() %>%
+  add_model(en_model) %>%
   add_recipe(vehicles_recipe)
 
 # Tuning/fitting ----
 
-tic("SVM Radial Basis")
-# Pace tuning code in hear
-svmrb_tuned <- svmrb_workflow %>% 
-  tune_grid(model_folds, grid = svmrb_grid)
+en_tuned <- en_workflow %>% 
+  tune_grid(model_folds, grid = en_grid)
 
-toc(log = TRUE)
+# save files
+write_rds(en_tuned, "en_result.rds")
 
-# save runtime info
-svmrb_runtime <- tic.log(format = TRUE)
+save(en_tuned, en_workflow, file = "model_info/en_tuned.rds")
 
-# Write out results & workflow
-write_rds(svmrb_runtime, "svmrbtime.rds")
-write_rds(svmrb_tuned, "svmrb_results.rds")
+# results
+en_workflow_tuned <- en_workflow %>% 
+  finalize_workflow(select_best(en_tuned, metrics = class_metrics))
 
-select_best(svmrb_tuned, metric = "accuracy")
-show_best(svmrb_tuned, metric = "accuracy")
-
+en_results <- fit(en_workflow_tuned, vehicle_train)
 
 
 
