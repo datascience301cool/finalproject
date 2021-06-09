@@ -30,10 +30,10 @@ tune_results <-
         "svmrb",
         "mlp"),
     tune_info = list(
-        mlp_tuned, 
         rf_tune, 
         btree_tune,
-        svmrb_tuned
+        svmrb_tuned, 
+        mlp_tuned
       ),
     assessment_info = 
       map(
@@ -59,13 +59,14 @@ tune_results %>%
 rf_tune %>% 
   autoplot(metric = "rmse")
 
-
 svmrb_tuned %>%
   autoplot(metric = 'rmse')
 
 btree_tune %>%
   autoplot(metric = 'rmse')
-  
+
+mlp_tuned %>%
+  autoplot(metric = 'rmse')
 ```
 
 
