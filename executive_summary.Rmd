@@ -1,0 +1,213 @@
+---
+title: "Final Project Executive Summary"
+subtitle: "Data Science II (STAT 301-2)"
+author: "Preston Chan"
+date: "March 19^th^, 2021"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: "tango"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+# Load packages
+library(tidyverse)
+library(tidymodels)
+library(janitor)
+library(patchwork)
+library(splitstackshape)
+
+# Read in unprocessed data
+vehicles_unprocessed <- read_csv("data/unprocessed/vehicles.csv")
+
+# Read in processed data
+vehicles <- read_csv("data/processed/vehicles.csv")
+
+# Split the data
+set.seed(57)
+vehicles_split <- initial_split(vehicles, prop = 0.7, strata = price)
+vehicles_train <- training(vehicles_split)
+vehicles_test <- testing(vehicles_split)
+```
+
+## Executive Summary
+
+For my final project, I chose to create a predictive model that can predict the price of used cars based on a set of car characteristics. The data set was based off of all used car listings in the U.S. on Craigslist.
+
+Upon performing the initial EDA, I discovered a couple of important findings. First of all, I many variables had missingness. I was able to fix this using a couple of imputation techniques in the recipe. I also found that the distribution of price was very skewed to the right and that many cars were priced at $0. I ultimately decided to filter out cars priced below $1,000 and above $100,000 and then perform a log transformation to normalize the distribution.
+
+```{r}
+hist_before <- vehicles_unprocessed %>% 
+  ggplot(aes(x = price)) + 
+  geom_histogram() + 
+  labs(title = "Before") + 
+  theme(plot.title = element_text(hjust = 0.5))
+box_before <- vehicles_unprocessed %>% 
+  ggplot(aes(x = price)) + 
+  geom_boxplot()
+hist_after <- vehicles_unprocessed %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_histogram() + 
+  labs(title = "After") + 
+  theme(plot.title = element_text(hjust = 0.5))
+box_after <- vehicles_unprocessed %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_boxplot()
+(hist_before + hist_after) / (box_before + box_after)
+```
+
+To begin the modeling process, I split the data into training and testing sets and created resamples using v-fold cross-validation. I then created two recipes: one for random forest and k-nearest neighbors models and one for a linear regression model. 
+
+In the recipe, I chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `condition`, `cylinders`, `fuel`, `odometer`, `title_status`, `transmission`, `drive`, `type`, and `state_region`). For imputation, I used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. Previously, I tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. I dummy encoded all nominal variables and used one-hot encoding in the recipe for the random forest and k-nearest neighbors models. In the recipe for the linear model, I did not use one-hot encoding, which was the only difference between the two recipes. Finally, I used `step_nzv()` to remove variables that were highly sparse, which also helped eliminate missingness when tuning. Finally, I used `step_normalize()` to center and scale all predictors.
+
+```{r}
+# Recipe for rf and knn
+vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
+  step_medianimpute(year, odometer) %>% 
+  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+  step_dummy(all_nominal(), one_hot = TRUE) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+
+# Recipe for lm
+vehicles_recipe_lm <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
+  step_medianimpute(year, odometer) %>% 
+  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+  step_dummy(all_nominal()) %>% 
+  step_nzv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+```
+
+After creating the recipes, I created workflows for each model and then tuned the random forest and k-nearest neighbors models and fitted the linear model (which did not need tuning) to the resamples.
+
+```{r, include=FALSE}
+# Load random forest tuning
+load(file = "tuning/data/rf_tune.rda")
+
+# Load k-nearest neighbors tuning
+load(file = "tuning/data/knn_tune.rda")
+
+# Load linear model fitting
+load(file = "tuning/data/lm_fit.rda")
+```
+
+At this point, I was ready to evaluate the results. For the random forest and k-nearest neighbors models, I used `autoplot()` to view the change in RMSE as the parameters changed.
+
+```{r}
+# Random forest
+rf_autoplot <- rf_tune %>% 
+  autoplot(metric = "rmse") + 
+  labs(
+    title = "Random Forest", 
+    color = "min_n"
+  ) + 
+  theme(
+    plot.title = element_text(hjust = 0.5), 
+    legend.position = c(0.9, 0.95), 
+    legend.justification = c(1, 1)
+  )
+
+# K-nearest neighbors
+knn_autoplot <- knn_tune %>% 
+  autoplot(metric = "rmse") + 
+  labs(title = "K-Nearest Neighbors") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+rf_autoplot + knn_autoplot
+```
+
+For the k-nearest neighbors model, the RMSE strictly decreased as the number of neighbors increased. For the random forest model, the RMSE strictly decreased as `mtry` increased up until `mtry` was equal to 8 for all values of `min_n`. After that point, it basically flattened out.
+
+To get the overall best model (as well as the parameters used by that model), I combined the results for all three models into one data frame and arranged the RMSE from smallest to largest.
+
+```{r}
+tune_results <- tibble(
+  model_type = c("rf", "knn", "lm"), 
+  tune_info = list(rf_tune, knn_tune, lm_fit), 
+  assessment_info = map(tune_info, collect_metrics), 
+  best_model = map(tune_info, ~ select_best(.x, metric = "rmse"))
+)
+
+tune_results %>% 
+  select(model_type, assessment_info) %>% 
+  unnest(assessment_info) %>% 
+  filter(.metric == "rmse") %>% 
+  arrange(mean)
+```
+
+The random forest model using 8 for `mtry` and 2 for `min_n` had the lowest RMSE at 0.161. With this being the best model, I fitted it to the training data and then tested it on the testing data.
+
+```{r}
+# Workflow
+rf_workflow_tuned <- rf_workflow %>% 
+  finalize_workflow(select_best(rf_tune, metric = "rmse"))
+
+# Fitting to training set
+rf_results <- fit(rf_workflow_tuned, vehicles_train)
+
+# Testing
+predict(rf_results, new_data = vehicles_test) %>% 
+  bind_cols(vehicles_test %>% select(price)) %>% 
+  rmse(truth = price, estimate = .pred)
+```
+
+The RMSE was about 0.157, meaning that the model performed slightly better on the testing data than it did on the resamples.
+
+To get a better sense of the accuracy of the model, I decided to test it on an actual used car listing on Craigslist (specifically, a 2012 Toyota RAV4).
+
+```{r}
+# Create data frame for real listing
+used_car_listing <- tibble(
+  year = 2012, 
+  manufacturer = "toyota", 
+  condition = "good", 
+  cylinders = "4 cylinders", 
+  fuel = "gas", 
+  odometer = 166328, 
+  title_status = "clean", 
+  transmission = "automatic", 
+  drive = "4wd", 
+  type = "SUV", 
+  state_region = "midwest"
+)
+
+# Predict price
+predict(rf_results, used_car_listing)
+```
+
+After undoing the log transformation, I found that the predicted price was $7,413, which was not far off the actual listing price of $7,999. Either the car was overpriced or the model underestimated the price.
+
+Given that this particular listing's `price` was on low side, I also wanted to try predicting the `price` of a more expensive listing. I found a listing for a 2016 Ford F250 listed for $30,000.
+
+```{r}
+used_car_listing2 <- tibble(
+  year = 2016, 
+  manufacturer = "ford", 
+  condition = "excellent", 
+  cylinders = "8 cylinders", 
+  fuel = "gas", 
+  odometer = 43000, 
+  title_status = "clean", 
+  transmission = "automatic", 
+  drive = "4wd", 
+  type = "truck", 
+  state_region = "midwest"
+)
+
+# Predict price
+predict(rf_results, used_car_listing2)
+```
+
+After undoing the log transformation, the predicted `price` ended up being $31,623, which was also pretty close to the actual `price`. I was pretty satisfied with these results, but seeing that the model underestimated the `price` in the first test and then overestimated it in the second test, I knew that the model could be improved.
+
+Ultimately, I was quite satisfied with the predictive accuracy of the random forest model given the amount of time I had to work on the project. I believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. However, if given more time, my next steps would be to try new models and/or tuning parameters to get an even lower RMSE.
