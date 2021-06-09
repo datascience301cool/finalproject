@@ -14,6 +14,7 @@ load('data/vehicle_setup.rda')
 load('data/vehicles_strat.rda')
 load('data/vehicles.rda')
 load('data/rf_tune.rda')
+load('data/mlp_tuned.rda')
 ```
 
 
@@ -26,9 +27,10 @@ tune_results <-
       c(
         "rf", 
         "bt", 
-        "svmrb"),
+        "svmrb",
+        "mlp"),
     tune_info = list(
-        # nn_tuned, 
+        mlp_tuned, 
         rf_tune, 
         btree_tune,
         svmrb_tuned
