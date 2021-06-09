@@ -48,3 +48,22 @@ toc(log = T)
 btree_runtime <- tic.log(format = TRUE)
 save(btree_tune, btree_wflow, btree_runtime, file = "data/btree_tune.rda")
 
+
+
+btree_workflow_tuned <- btree_wflow %>% 
+  finalize_workflow(select_best(btree_tune, metrics = class_metrics))
+
+
+btree_results <- fit(btree_workflow_tuned, train_set)
+
+
+
+btree_predict <- predict(btree_results, new_data = test_set) %>% 
+  bind_cols(test_set %>% select(price))
+
+
+save(btree_predict, file = 'data/btree_predictions.rda')
+
+select_best(btree_workflow_tuned, metric = 'rmse')
+
+

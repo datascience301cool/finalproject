@@ -3,6 +3,20 @@ title: "final_vehicle_result"
 output: html_document
 ---
 
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+
+load('data/btree_tune.rda')
+load('data/svmrb_tuned.rda')
+load('data/vehicle_setup.rda')
+load('data/vehicles_strat.rda')
+load('data/vehicles.rda')
+load('data/rf_tune.rda')
+```
+
+
 # Four model results
 
 ```{r, error=TRUE}
@@ -10,13 +24,12 @@ tune_results <-
   tibble(
     model_type = 
       c(
-        "nn", 
         "rf", 
         "bt", 
         "svmrb"),
     tune_info = list(
-        nn_tuned, 
-        rf_tuned, 
+        # nn_tuned, 
+        rf_tune, 
         btree_tune,
         svmrb_tuned
       ),
@@ -40,5 +53,17 @@ tune_results %>%
   arrange(mean)
 ```
 
+```{r}
+rf_tune %>% 
+  autoplot(metric = "rmse")
+
+
+svmrb_tuned %>%
+  autoplot(metric = 'rmse')
+
+btree_tune %>%
+  autoplot(metric = 'rmse')
+  
+```
 
 
