@@ -20,7 +20,7 @@ library(janitor)
 set.seed(2021)
 
 load(file = "data/vehicles.rda")
-<<<<<<< HEAD
+
 vehicles <- vehicles %>% 
   janitor::clean_names() %>%
   select(-c(id, url, region_url, vin, image_url, description)) %>%
@@ -54,7 +54,7 @@ save(vehicles, file = "data/vehicles.rda")
 vehicles_strat <- vehicles %>% 
   stratified("price", 0.05)
 save(vehicles_strat, file = "data/vehicles_strat.rda")
-=======
+
 # vehicles <- vehicles %>% 
 #   clean_names() %>%
 #   select(-c(id, url, region_url, vin, image_url, description)) %>%
@@ -93,7 +93,6 @@ load(file = "data/vehicles_strat.rda")
 #save(vehicles_strat, file = "data/vehicles_strat.rda")
 
 set.seed(57)
->>>>>>> 224d99f52f317d55e011938fb83991cf9fc46d14
 
 vehicle_split <- vehicles_strat %>%
   initial_split(prop = .8, strata = price)
@@ -138,17 +137,15 @@ vehicle_train %>%
   geom_point()
 
 # Preston's recipe
-<<<<<<< HEAD
 vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicle_train) %>% 
   step_medianimpute(year, odometer) %>% 
   step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
-  step_nzv(all_predictors()) %>% 
-=======
+  step_nzv(all_predictors())
+
 vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicle_train) %>% 
   step_impute_median(year, odometer) %>% 
   step_impute_mode(manufacturer, fuel, title_status, transmission) %>% 
   step_other(all_nominal(), -transmission, -fuel) %>% 
->>>>>>> 224d99f52f317d55e011938fb83991cf9fc46d14
   step_dummy(all_nominal(), one_hot = TRUE) %>% 
   step_zv(all_predictors()) %>% 
   step_normalize(all_numeric(), -all_outcomes())
@@ -159,6 +156,7 @@ vehicle_recipe %>% prep(vehicle_train) %>% bake(new_data = NULL) %>% view()
 #load("model_info/wildfires_setup.rda")
 
 #tuning
+set.seed(57)
 model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3)
 
 # save tuning objects

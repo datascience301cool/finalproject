@@ -14,7 +14,7 @@ load('data/vehicle_setup.rda')
 load('data/vehicles_strat.rda')
 load('data/vehicles.rda')
 load('data/rf_tune.rda')
-load('data/mlp_tuned.rda')
+load('data/knn_tune.rda')
 ```
 
 
@@ -28,12 +28,12 @@ tune_results <-
         "rf", 
         "bt", 
         "svmrb",
-        "mlp"),
+        "knn"),
     tune_info = list(
         rf_tune, 
         btree_tune,
         svmrb_tuned, 
-        mlp_tuned
+        knn_tune
       ),
     assessment_info = 
       map(
@@ -65,7 +65,7 @@ svmrb_tuned %>%
 btree_tune %>%
   autoplot(metric = 'rmse')
 
-mlp_tuned %>%
+knn_tune %>%
   autoplot(metric = 'rmse')
 ```
 
