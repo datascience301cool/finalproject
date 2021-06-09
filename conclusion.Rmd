@@ -84,7 +84,7 @@ ex_2 <- predict(rf_results, used_car_listing2)
 10^ex_2
 ```
 
-Undoing the log transformation, the predicted `price` ended up being $28,966, which is really close to the actual `price`. We're pretty satisfied with these results, but seeing that the model overestimated the `price` in the first test and then underestimated it in the second test, we think that the model could be improved.
+Undoing the log transformation, the predicted `price` ended up being $28,966, which is really close to the actual `price`. We're pretty satisfied with these results, but seeing that the model overestimated the `price` in the first test and then underestimated it in the second test, we think that the odel could be improved.
 
 As for next steps, seeing the random forest model best three others makes us confident that this would be the best way to go for accuracy - especially looking at the closeness of the results given real data. However, we may want to try adjusting some tuning parameters to make this model even more accurate. 
 
