@@ -57,8 +57,6 @@ mlp_workflow <- workflow() %>%
   add_recipe(vehicles_recipe)
 
 # Tuning/fitting ----
-tic("NEURAL NETWORK")
-
 model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3)
 
 mlp_metric <- metric_set(rmse)
@@ -78,6 +76,8 @@ mlp_tuned <- mlp_workflow %>%
 #mlp_tuned_final <- mlp_workflow %>% 
 #  finalize_workflow(select_best(mlp_tuned, metric = "rmse"))
 
+show_best(mlp_tuned, metric = "rmse")
+
 #toc(log = TRUE)
 
 #mlp_results <- fit(mlp_tuned_final, vehicle_train)
@@ -91,6 +91,6 @@ mlp_tuned <- mlp_workflow %>%
 #mlp_time <- tic.log(format = TRUE)
 
 #write_rds(mlp_accuracy, "mlp_model.rds")
-write_rds(mlp_tuned, "data/mlp_tuned.rds")
-write_rds(mlp_workflow, "data/mlp_workflow.rds")
+save(mlp_tuned, file = "data/mlp_tuned.rda")
+#save(mlp_workflow, "data/mlp_workflow.rda")
 
