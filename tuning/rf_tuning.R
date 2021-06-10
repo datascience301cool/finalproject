@@ -4,12 +4,13 @@
 # Load packages
 library(tidyverse)
 library(tidymodels)
+library(tictoc)
 
 # Set seed
 set.seed(57)
 
 # Load required objects
-load("data/vehicle_setup.rda")
+load("tuning/data/vehicle_setup.rda")
 
 # Define model
 rf_model <- rand_forest(
@@ -19,9 +20,6 @@ rf_model <- rand_forest(
 ) %>% 
   set_engine("ranger")
 
-# # Check tuning parameters
-# parameters(rf_model)
-
 # Set-up tuning grid
 rf_params <- parameters(rf_model) %>% 
   update(mtry = mtry(range = c(2, 17)))
@@ -29,7 +27,7 @@ rf_params <- parameters(rf_model) %>%
 # Define grid
 rf_grid <- grid_regular(rf_params, levels = 5)
 
-# Random forest workflow
+# Workflow
 rf_workflow <- workflow() %>% 
   add_model(rf_model) %>% 
   add_recipe(vehicle_recipe)
@@ -43,8 +41,8 @@ rf_tune <- rf_workflow %>%
   )
 toc(log = TRUE)
 
-# save runtime info
+# Save runtime info
 rf_runtime <- tic.log(format = TRUE)
 
 # Write out results & workflow
-save(rf_tune, rf_workflow, rf_runtime, file = "data/rf_tune.rda")
+save(rf_tune, rf_workflow, rf_runtime, file = "tuning/data/rf_tune.rda")

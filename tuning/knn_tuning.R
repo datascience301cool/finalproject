@@ -1,35 +1,36 @@
-# Nearest neighbors tuning ----
 
-# Load package(s) ----
+# K-nearest neighbors tuning
+
+# Load packages
 library(tidyverse)
 library(tidymodels)
 library(tictoc)
 
-# load required objects ----
-load("data/vehicle_setup.rda")
+# Set seed
+set.seed(57)
 
-# Define model ----
+# Load required objects
+load("tuning/data/vehicle_setup.rda")
+
+# Define model
 knn_model <- nearest_neighbor(
   mode = "regression", 
   neighbors = tune()
 ) %>% 
   set_engine("kknn")
 
-# Check tuning parameters
-parameters(knn_model)
-
-# set-up tuning grid ----
+# Set-up tuning grid
 knn_params <- parameters(knn_model)
 
-# define tuning grid
+# Define tuning grid
 knn_grid <- grid_regular(knn_params, levels = 5)
 
-# workflow ----
+# Workflow
 knn_workflow <- workflow() %>% 
   add_model(knn_model) %>% 
   add_recipe(vehicle_recipe)
 
-# Tuning/fitting ----
+# Tuning/fitting
 tic("Nearest Neighbors")
 knn_tune <- knn_workflow %>% 
   tune_grid(
@@ -38,8 +39,8 @@ knn_tune <- knn_workflow %>%
   )
 toc(log = TRUE)
 
-# save runtime info
+# Save runtime info
 knn_runtime <- tic.log(format = TRUE)
 
 # Write out results & workflow
-save(knn_tune, knn_workflow, knn_runtime, file = "data/knn_tune.rda")
+save(knn_tune, knn_workflow, knn_runtime, file = "tuning/data/knn_tune.rda")

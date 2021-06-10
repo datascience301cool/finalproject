@@ -22,6 +22,7 @@ library(tidymodels)
 library(janitor)
 library(patchwork)
 library(splitstackshape)
+library(corrplot)
 
 # Set seed here!
 set.seed(57)
@@ -35,14 +36,10 @@ Before cleaning the data, there were about 458,000 rows, each row representing a
 
 The goal of this project was to develop a model that can accurately predict the price of a used car on Craigslist based on a set of its characteristics. The ultimate research question we are trying to answer is "how can we best predict the price of used cars?". This is a predictive question with price as the outcome variable, so oue research question is answered using a regression-based model. The motivation behind answering this question is that having an accurate model will be very useful in the real world, especially for people who are shopping for used cars. This is because a used car shopper could use the model to predict what the price should be for a car they are interested in. This would prevent them from purchasing overpriced cars and also help them identify cars that may be undervalued based on their characteristics.
 
-Throughout the project, we refer to the data set as the `vehicles` data set. The data was read in using the following code. Since we will be demonstrating the data cleaning we performed, we read in the unprocessed data.
+Throughout the project, we refer to the data set as the `vehicles` data set. The data was read in using the following code. Since we will be demonstrating the data cleaning we performed, we read in the unprocessed data. (Note: the full unprocessed data .csv file was over 1 GB, which surpasses the GitHub limit of 100 MB per file. Thus, we had to read in the data separately and save it as a .rda file. This file contains a stratified sample of 25% of the full unprocessed data. This was the only way to get the size of the file small enough to fit in the repository. Thus all of the EDA below was performed on this 25% sample. In this sample, there were 111,860 rows.)
 
-```{r, message=FALSE, warning=FALSE, eval = FALSE}
-vehicles <- read_csv("data/unprocessed/vehicles.csv") %>% 
-  clean_names()
-```
-```{r, message = FALSE, echo = FALSE}
-load('data/vehicles.rda')
+```{r, message=FALSE, warning=FALSE}
+load('data/unprocessed/vehicles.rda')
 ```
 
 
@@ -50,7 +47,7 @@ load('data/vehicles.rda')
 
 Before beginning the EDA, we simplified the data set by removing irrelevant columns These columns include things like the URL to the listing, the listing ID, the url to the listing's image, etc. These columns will have no predictive power.
 
-```{r, eval=FALSE}
+```{r}
 vehicles <- vehicles %>% 
   select(-c(id, url, region_url, vin, image_url, description, posting_date))
 ```
@@ -61,7 +58,7 @@ After doing this, we began the EDA by performing an assurance check of the data 
 skimr::skim_without_charts(vehicles)
 ```
 
-The main takeaway from the results was that a large handful of the variables had missingness, which was not surprising considering the massive size of the data set. Some of the variables that seemed to be important predictors (based on my intuition) had a somewhat high proportion of missingness, namely `condition`, `cylinders`, `drive`, `size`, and `type`. The proportion of missing values in these columns was 42%, 37%, 41%, 29%, 70%, and 25%, respectively. Most of the other columns had very low missingness. Another thing we noticed was that `state` had 51 unique vales and `region` had 405 unique values. We knew that this would cause an issue later on when creating a recipe and turning these variables into dummy variables since it would produce far too many columns, so we  decided to classify the states into 5 regions: `northeast`, `southeast`, `midwest`, `southwest`, and `west`.
+The main takeaway from the results was that a large handful of the variables had missingness, which was not surprising considering the massive size of the data set. Some of the variables that seemed to be important predictors (based on my intuition) had a somewhat high proportion of missingness, namely `condition`, `cylinders`, `drive`, `size`, and `type`. The proportion of missing values in these columns was 41%, 37%, 31%, 70%, and 25%, respectively. All of the other columns (besides `paint_color`, which is an unimportant variable) had very low missingness. Another thing we noticed was that `state` had 51 unique vales and `region` had 405 unique values. We knew that this would cause an issue later on when creating a recipe and turning these variables into dummy variables since it would produce far too many columns, so we decided to classify the states into 5 regions: `northeast`, `southeast`, `midwest`, `southwest`, and `west`.
 
 ```{r}
 vehicles <- vehicles %>% 
@@ -115,7 +112,7 @@ plot4 <- vehicles %>%
 (plot1 + plot2) / (plot3 + plot4)
 ```
 
-Based on these plots, it was difficult to see the distribution because the distribution was so skewed to the right. We decided to see if we could filter out any potential outliers to make it easier to see the distribution. We first looked at how many vehicles were priced at over $100,000, since this seemed like a price would be considered an outlier among used cars.
+Based on these plots, it was difficult to see the distribution because the distribution was so skewed to the right. We decided to filter out potential outliers to make it easier to see the distribution. We first looked at how many vehicles were priced at over $100,000 since this seemed like a price that would be considered an outlier among used cars.
 
 ```{r}
 vehicles %>% 
@@ -123,9 +120,9 @@ vehicles %>%
   count()
 ```
 
-Only 596 vehicles out of over 458,000 listings were priced at above $100,000. This implied that cars listed for more than $100,000 were clearly outliers. 
+Only 596 vehicles out of over 458,000 listings were priced at above $100,000. This implies that cars listed for over $100,000 are clearly outliers. 
 
-We also decided to look at how many listings were priced at below $1,000. This is because earlier, we  had gone on Craiglist to look at cars priced below $1,000 and discovered that many of these listings were for cars that could be paid off in monthly increments of a few hundred dollars. Since these monthly prices do not reflect the full value of the car, we decided it would be a good idea to filter these out. We decided to see how many listings would be taken out by this filter.
+We also decided to look at how many listings were priced at below $1,000. This is because earlier, we had gone on Craiglist to look at cars priced below $1,000 and discovered that many of these listings were for cars that could be paid off in monthly increments of a few hundred dollars. Since these monthly prices do not reflect the full value of the car, we decided it would be a good idea to filter these out. We decided to see how many listings would be taken out by this filter.
 
 ```{r}
 vehicles %>% 
@@ -141,9 +138,9 @@ vehicles %>%
   count()
 ```
 
-More than 33,000 listings were priced at $0. Upon looking at such listings on Craigslist, we  discovered that almost all of these listings were from people who were hiding the real price of the car. In other words, they set the price to $0, and then inside the description, they would include a link to a different website which had the actual price of the car.
+More than 33,000 listings were priced at $0. Upon looking at such listings on Craigslist, we discovered that almost all of these listings were from people who were hiding the real price of the car. In other words, they set the price to $0, and then inside the description, they would include a link to a different website which had the actual price of the car.
 
-Based on these analyses, We decided that listings priced below $1,000 or above $100,000 were outliers. Thus, we looked at the distribution of `price` again after filtering out these outliers.
+Based on these analyses, we decided that listings priced below $1,000 or above $100,000 were outliers. Thus, we looked at the distribution of `price` again after filtering out these outliers.
 
 ```{r, message=FALSE, warning=FALSE}
 plot1 <- vehicles %>% 
@@ -199,7 +196,7 @@ plot4 <- vehicles %>%
 (plot1 + plot2) / (plot3 + plot4)
 ```
 
-This distribution looked much more normal, and the boxplot showed no outliers. Therefore, we decided to filter out the outliers from the `vehicles` data set and log transform `price`.
+This distribution looked much more normal, and the boxplot showed no outliers. Therefore, we decided to permanently filter out the outliers from the `vehicles` data set and permanently log transform `price`.
 
 ```{r}
 vehicles <- vehicles %>% 
@@ -213,10 +210,11 @@ The next thing we wanted to inspect was the correlation of the numeric x-variabl
 vehicles %>% 
   mutate(price = (10 ^ price)) %>% 
   select(price, year, odometer, lat, long) %>% 
-  cor(use = "complete.obs")
+  cor(use = "complete.obs") %>% 
+  corrplot()
 ```
 
-From these results it was apparent that the only variable that had a correlation with `price` (albeit a small one) was year. The other variables essentially had no correlation. However, we wanted to see if there were unusual values in these variables that were decreasing their correlation with `price`. In particular, we  wanted to look for unusual values in `year` and `odometer` as there cannot be unusual values for `lat` (latitude) and `long` (longitude) since they are simply geographical coordinates.
+From these results it was apparent that the only variable that had a correlation with `price` (albeit a small one) was year. The other variables essentially had no correlation. However, we wanted to see if there were unusual values in these variables that were decreasing their correlation with `price`. In particular, we wanted to look for unusual values in `year` and `odometer` as there cannot be unusual values for `lat` (latitude) and `long` (longitude) since they are simply geographical coordinates.
 
 We decided to first look at the distribution of `year` to see if there were any unusual values affecting its correlation with `price`.
 
@@ -240,7 +238,7 @@ vehicles %>%
   labs(title = "Distribution of Odometer")
 ```
 
-From the boxplot, it was clear that there were a few extremely large outliers, which made it difficult to see if there were less extreme outliers. However, we  knew that most cars start to fall apart when they reach 250,000-300,000 miles, so we  decided to see how many cars in the data set had over 300,000 miles on their `odometer`.
+From the boxplot, it was clear that there were a few extremely large outliers, which made it difficult to see if there were less extreme outliers. However, we knew that most cars start to fall apart when they reach 250,000-300,000 miles, so we decided to see how many cars in the data set had over 300,000 miles on their `odometer`.
 
 ```{r}
 vehicles %>% 
@@ -249,9 +247,9 @@ vehicles %>%
   count()
 ```
 
-Only 2,154 listings out of the 400,000+ listings had an odometer with over 300,000 miles. Therefore, we  considered these as outliers.
+Only 2,154 listings out of the 400,000+ listings had an odometer with over 300,000 miles. Therefore, we considered these as outliers.
 
-Having found the unusual values in `year` and `odometer` that may have been decreasing their correlation with `price`, we  created a new correlation table in which we  filtered out the unusual values.
+Having found the unusual values in `year` and `odometer` that may have been decreasing their correlation with `price`, we created a new correlation table in which we filtered out the unusual values.
 
 ```{r}
 vehicles %>% 
@@ -259,12 +257,13 @@ vehicles %>%
   filter(odometer < 300000) %>% 
   filter(year > 1993) %>% 
   select(price, year, odometer, lat, long) %>% 
-  cor(use = "complete.obs")
+  cor(use = "complete.obs") %>% 
+  corrplot()
 ```
 
 Based on these results, it was clear that `year` and `odometer` actualy have moderate correlations with `price`. In other words, they seemed like useful predictors that could be included in the model recipes.
 
-Furthermore, the EDA revealed that `year` and `odometer` had notable outliers that should be removed from the `vehicles` data set. Thus, we  used the following code to remove these outliers from `vehicles`.
+Furthermore, the EDA revealed that `year` and `odometer` had notable outliers that should be removed from the `vehicles` data set. Thus, we used the following code to remove these outliers from `vehicles`.
 
 ```{r}
 vehicles <- vehicles %>% 
@@ -272,7 +271,7 @@ vehicles <- vehicles %>%
   filter(year > 1993)
 ```
 
-The last step in the data processing was shrinking the size of the data set. We were forced to do this because we  initially tried tuning my models using the full data set, and by the time we  had waited about 10 hours, the tuning process was still not finished. We decided to take a stratified sample (stratified by `price`) equivalent to 5% the size of the cleaned `vehicles` data set.
+The last step in the data processing was shrinking the size of the data set. We were forced to do this because we initially tried tuning my models using the full data set, and by the time we had waited about 10 hours, the tuning process was still not finished. We decided to take a stratified sample (stratified by `price`) equivalent to 5% the size of the cleaned `vehicles` data set. (Note: we set `eval=FALSE` for this code chunk because the `vehicles` dataset being used thus far is 25% the size of the full unprocessed dataset as described at the end of the introduction. Instead, we loaded in a separate .rda file called `vehicle_strat.rda` which contains the 5% stratified sample of the full unprocessed dataset. Again, we had to use this method due to the GitHub file size restrictions.)
 
 ```{r, eval=FALSE}
 vehicles <- vehicles %>% 
@@ -280,26 +279,26 @@ vehicles <- vehicles %>%
 ```
 
 ```{r, echo=FALSE}
-load("data/vehicles_strat.rda")
+load("data/processed/vehicles_strat.rda")
 ```
 
-This was the final "processed" data set that we  used for the modeling process.
+This was the final "processed" data set that we used for the modeling process.
 
 
 ## Modeling
 
 ### Data Spending
 
-With the data cleaning, EDA, and data processing done, we  proceeded to begin the modeling process by first splitting the data. We split the data into the training and testing sets, allocating 70% to the training set and 30% to the testing set.
+With the data cleaning, EDA, and data processing done, we proceeded to begin the modeling process by first splitting the data. We split the data into the training and testing sets, allocating 80% to the training set and 20% to the testing set.
 
 ```{r}
 set.seed(57)
-vehicle_split <- initial_split(vehicles, prop = 0.7, strata = price)
+vehicle_split <- initial_split(vehicles, prop = 0.8, strata = price)
 vehicle_train <- training(vehicle_split)
 vehicle_test <- testing(vehicle_split)
 ```
 
-Next, we  compared the dimensions (rows and columns) of the training and testing sets to the full data set. We were able to confirm that the dimensions matched.
+Next, we compared the dimensions (rows and columns) of the training and testing sets to the full data set. We were able to confirm that the dimensions matched.
 
 ```{r}
 dim(vehicle_split)
@@ -307,7 +306,7 @@ dim(vehicle_train)
 dim(vehicle_test)
 ```
 
-Finally, we  created resamples using v-fold cross-validation, folding the training set using 10 folds and 5 repeats and stratifying by `price`.
+Finally, we created resamples using v-fold cross-validation, folding the training set using 5 folds and 3 repeats and stratifying by `price`.
 
 ```{r}
 model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3, strata = price)
@@ -468,16 +467,16 @@ svmrb_tuned <- svmrb_workflow %>%
 
 ```{r, echo=FALSE}
 # Random forest
-load(file = "data/rf_tune.rda")
+load(file = "tuning/data/rf_tune.rda")
 
 # K-nearest neighbors
-load(file = "data/knn_tune.rda")
+load(file = "tuning/data/knn_tune.rda")
 
 # Boosted tree
-load(file = "data/btree_tune.rda")
+load(file = "tuning/data/btree_tune.rda")
 
 # Support vector machine
-load(file = "data/svmrb_tuned.rda")
+load(file = "tuning/data/svmrb_tuned.rda")
 ```
 
 ### Evaluation of results
@@ -566,7 +565,7 @@ predict(rf_results, new_data = vehicle_test) %>%
   rmse(truth = price, estimate = .pred)
 ```
 
-The RMSE was about 0.211, meaning that the model performed slightly worse on the testing data than it did on the resamples.
+The RMSE was about 0.199, meaning that the model performed slightly better on the testing data than it did on the resamples.
 
 
 ## Conclusion and Next Steps
@@ -577,19 +576,13 @@ We were curious about how the model would do at predicting the price of a real u
 
 ```{r}
 # Create data frame for real listing
-
 used_car_listing <- tibble(
   year = 2005, 
   manufacturer = "ford", 
-  condition = "good", 
-  cylinders = "8 cylinders", 
   fuel = "gas", 
   odometer = 130222, 
   title_status = "clean", 
-  transmission = "automatic", 
-  drive = "4wd", 
-  type = "truck", 
-  state_region = "midwest"
+  transmission = "automatic"
 )
 
 # Predict price
@@ -604,19 +597,13 @@ Given that this particular listing's `price` was on low side, also wanted to try
 
 ```{r}
 # Create data frame for real listing
-
 used_car_listing2 <- tibble(
   year = 2018, 
   manufacturer = "jeep", 
-  condition = "excellent", 
-  cylinders = "6 cylinders", 
   fuel = "gas", 
   odometer = 33894, 
   title_status = "clean", 
-  transmission = "automatic", 
-  drive = "4wd", 
-  type = "SUV", 
-  state_region = "midwest"
+  transmission = "automatic"
 )
 
 # Predict price
@@ -625,7 +612,7 @@ ex_2 <- predict(rf_results, used_car_listing2)
 10^ex_2
 ```
 
-Undoing the log transformation, the predicted `price` ended up being $28,966, which is really close to the actual `price`. We're pretty satisfied with these results, but seeing that the model overestimated the `price` in the first test and then underestimated it in the second test, we think that the model could be improved.
+Undoing the log transformation, the predicted `price` ended up being $28,966, which is really close to the actual `price`. We're pretty satisfied with these results, but seeing that the model over-predicted the `price` in the first test and then under-predicted it in the second test, we think that the model could be improved.
 
 As for next steps, seeing the random forest model best three others makes us confident that this would be the best way to go for accuracy - especially looking at the closeness of the results given real data. However, we may want to try adjusting some tuning parameters to make this model even more accurate. 
 

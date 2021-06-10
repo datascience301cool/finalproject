@@ -24,19 +24,16 @@ library(patchwork)
 library(splitstackshape)
 
 # Read in unprocessed data
-load(file = "data/vehicles.rda")
+load(file = "data/unprocessed/vehicles.rda")
 
 # Read in processed data
-load(file = "data/vehicles_strat.rda")
+load(file = "data/processed/vehicles_strat.rda")
 
 # Split the data
-set.seed(2021)
-
-vehicles_strat <- vehicles %>% 
-  stratified("price", 0.05)
+set.seed(57)
 
 vehicle_split <- vehicles_strat %>%
-  initial_split(prop = .8, strata = price)
+  initial_split(prop = 0.8, strata = price)
 
 vehicle_train <- training(vehicle_split)
 
@@ -47,48 +44,46 @@ vehicle_test <- testing(vehicle_split)
 
 For our final project, we decided to create four different predictive models that can predict the price of used cars based on a set of car characteristics. After creating all four models, we tested them to see which performed the best. The data set was based off of all used car listings in the U.S. on Craigslist.
 
-When first looking at the data, our group saw that there was missingness in a lot of the variables, probably explained by how big the data set actually is. We simply took care of missingness in the EDA and recipe. Also, becuase 596 vehicles of over 458,000 listings were above $100,000, we considred them to be outliers. We also thought fitering out listings below $1,000 would be important because they do not reflect the full value of the car. 
+When first looking at the data, our group saw that there was missingness in a lot of the variables, probably explained by how big the data set actually is. We simply took care of missingness in the EDA and recipe. Also, becuase 596 vehicles of over 458,000 listings were above $100,000, we considered them to be outliers. We also thought fitering out listings below $1,000 would be important because they do not reflect the full value of the car. We also performed a log transformation of `price` to normalize the distribution. The graphs below show the distribution of `price` before and after the above changes were made to the dataset.
 
 ```{r}
 # looked at distribution of price
-plot1 <- vehicles %>% 
-  ggplot(aes(x = price)) + 
-  geom_freqpoly() + 
-  labs(title = "Frequency Polygon")
-
-plot2 <- vehicles %>% 
+hist_before <- vehicles %>% 
   ggplot(aes(x = price)) + 
   geom_histogram() + 
-  labs(title = "Histogram")
-
-plot3 <- vehicles %>% 
+  labs(title = "Before") + 
+  theme(plot.title = element_text(hjust = 0.5))
+box_before <- vehicles %>% 
   ggplot(aes(x = price)) + 
-  geom_density() + 
-  labs(title = "Density Plot")
-
-plot4 <- vehicles %>% 
+  geom_boxplot()
+hist_after <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
   ggplot(aes(x = price)) + 
-  geom_boxplot() + 
-  labs(title = "Box Plot")
-
-(plot1 + plot2) / (plot3 + plot4)
+  geom_histogram() + 
+  labs(title = "After") + 
+  theme(plot.title = element_text(hjust = 0.5))
+box_after <- vehicles %>% 
+  filter(price > 1000 & price < 100000) %>% 
+  mutate(price = log10(price)) %>% 
+  ggplot(aes(x = price)) + 
+  geom_boxplot()
+(hist_before + hist_after) / (box_before + box_after)
 ```
 
 To start the modeling process, we split the data into training and testing sets and created resamples using v-fold cross-validation. 
 
-We then created a recipe forall four models including svrmb, bt, nn, and rf.
+We then created a recipe for all four models including random forest, k-nearest neighbors, boosted tree, and support vector machine with radial basis function.
 
 In the recipe, we chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `fuel`, `title_status`, `transmission`). 
 
-For imputation, we used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. When trying to use`step_knnimpute()` for all variables, errors came up. 
-
-We dummy encoded all nominal variables and used one-hot encoding. Finally, we used `step_zv()` to remove variables that were highly sparse, which also helped eliminate missingness when tuning, and we used `step_normalize()` for all numeric.
+For imputation, we used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. Previously, we tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. We used `step_other()` on all categorical variables to pool infrequently occurring values into an "other" category. This helped a lot with reducing data sparseness as well as the total number of variables in the prepped and baked recipe (which made model tuning much smoother). We dummy encoded all nominal variables using one-hot encoding. We used `step_zv()` to remove variables that only contain a single value. Finally, we used `step_normalize()` to center and scale all predictors.
 
 ```{r}
 # Recipe for svmrb, bt, knnn, and rf
-vehicles_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicle_train) %>% 
-  step_medianimpute(year, odometer) %>% 
-  step_modeimpute(manufacturer, fuel, title_status, transmission) %>% 
+vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicle_train) %>% 
+  step_impute_median(year, odometer) %>% 
+  step_impute_mode(manufacturer, fuel, title_status, transmission) %>% 
   step_other(all_nominal(), -transmission, -fuel) %>% 
   step_dummy(all_nominal(), one_hot = TRUE) %>% 
   step_zv(all_predictors()) %>% 
@@ -99,16 +94,16 @@ After creating the recipes, we created workflows for each model and then tuned t
 
 ```{r, include=FALSE}
 # Load random forest tuning
-load(file = "data/rf_tune.rda")
+load(file = "tuning/data/rf_tune.rda")
 
 # Load svmrb tuning
-load(file = "data/svmrb_tuned.rda")
+load(file = "tuning/data/svmrb_tuned.rda")
 
 # Load boosted tree tuning
-load(file = "data/btree_tune.rda")
+load(file = "tuning/data/btree_tune.rda")
 
 # Load knn tune
-load(file = "data/knn_tune")
+load(file = "tuning/data/knn_tune.rda")
 ```
 
 We then evaluated the results. For all four models, we used `autoplot()` to view the change in RMSE as the parameters changed.
@@ -183,15 +178,10 @@ To get a better sense of the accuracy of the model, we decided to test it on an 
 used_car_listing <- tibble(
   year = 2005, 
   manufacturer = "ford", 
-  condition = "good", 
-  cylinders = "8 cylinders", 
   fuel = "gas", 
   odometer = 130222, 
   title_status = "clean", 
-  transmission = "automatic", 
-  drive = "4wd", 
-  type = "truck", 
-  state_region = "midwest"
+  transmission = "automatic"
 )
 
 # Predict price
@@ -209,15 +199,10 @@ Given that this particular listing's `price` was on low side, we also wanted to 
 used_car_listing2 <- tibble(
   year = 2018, 
   manufacturer = "jeep", 
-  condition = "excellent", 
-  cylinders = "6 cylinders", 
   fuel = "gas", 
   odometer = 33894, 
   title_status = "clean", 
-  transmission = "automatic", 
-  drive = "4wd", 
-  type = "SUV", 
-  state_region = "midwest"
+  transmission = "automatic"
 )
 
 # Predict price
@@ -226,6 +211,6 @@ ex_2 <- predict(rf_results, used_car_listing2)
 10^ex_2
 ```
 
-After undoing the log transformation, the predicted `price` ended up being $28,966, which was also pretty close to the actual `price`. We were  satisfied with these results; however, after seeing that the model underestimated the `price` in the first test and then overestimated it in the second test, we knew that the there was room for improvement for this model.
+After undoing the log transformation, the predicted `price` ended up being $28,966, which was also pretty close to the actual `price`. We were  satisfied with these results; however, after seeing that the model over-predicted the `price` in the first test and then under-predicted it in the second test, we knew that the there was room for improvement for this model.
 
 In the end, we were satisfied with the predictive accuracy of the random forest model. We believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. With more time, our next steps would be to try new models and/or tuning parameters to get an even lower RMSE, which would hopefully improve the predictive accuracy. 
