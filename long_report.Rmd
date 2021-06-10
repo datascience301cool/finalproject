@@ -43,12 +43,7 @@ vehicles <- read_csv("data/unprocessed/vehicles.csv") %>%
 ```
 ```{r, message = FALSE}
 load('data/vehicles.rda')
-load('data/vehicles_strat.rda')
-
-
 ```
-
-
 
 
 ## EDA and Data Cleaning
@@ -279,13 +274,44 @@ vehicles <- vehicles %>%
 
 The last step in the data processing was shrinking the size of the data set. I was forced to do this because I initially tried tuning my models using the full data set, and by the time I had waited about 10 hours, the tuning process was still not finished. I decided to take a stratified sample (stratified by `price`) equivalent to 5% the size of the cleaned `vehicles` data set.
 
-```{r}
+```{r, eval=FALSE}
 vehicles <- vehicles %>% 
   stratified("price", 0.05)
 ```
 
+```{r, echo=FALSE}
+load("data/vehicles_strat.rda")
+```
+
 This was the final "processed" data set that I used for the modeling process.
 
+
+## Modeling
+
+### Data Spending
+
+With the data cleaning, EDA, and data processing done, I proceeded to begin the modeling process by first splitting the data. I split the data into the training and testing sets, allocating 70% to the training set and 30% to the testing set.
+
+```{r}
+set.seed(57)
+vehicles_split <- initial_split(vehicles, prop = 0.7, strata = price)
+vehicles_train <- training(vehicles_split)
+vehicles_test <- testing(vehicles_split)
+```
+
+Next, I compared the dimensions (rows and columns) of the training and testing sets to the full data set. I was able to confirm that the dimensions matched.
+
+```{r}
+dim(vehicles_split)
+dim(vehicles_train)
+dim(vehicles_test)
+```
+
+Finally, I created resamples using v-fold cross-validation, folding the training set using 10 folds and 5 repeats and stratifying by `price`.
+
+```{r}
+vehicles_fold <- vfold_cv(vehicles_train, v = 10, repeats = 5, strata = price)
+```
 
 ### Modeling Setup
 
