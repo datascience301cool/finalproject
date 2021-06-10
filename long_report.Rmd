@@ -1,8 +1,8 @@
 ---
 title: "Final Project Long Report"
 subtitle: "Data Science II (STAT 301-2)"
-author: "Preston Chan"
-date: "March 19^th^, 2021"
+author: "Preston Chan, Edwin Chalas,"
+date: "June 9^th^, 2021"
 output:
   html_document:
     code_folding: hide
@@ -29,7 +29,7 @@ set.seed(57)
 
 ## Introduction
 
-For my final project, I decided to analyze a data set of used cars listed on Craigslist called the "Used Car Dataset." This data set was compiled by Austin Reese and was downloaded from Kaggle. It contains the prices of used cars listed on Craigslist, an online marketplace that has the world's largest collection of used cars for sale. The dataset includes all used car listings in the United States, and it was last updated in December 2020.
+For our final project, I decided to analyze a data set of used cars listed on Craigslist called the "Used Car Dataset." This data set was compiled by Austin Reese and was downloaded from Kaggle. It contains the prices of used cars listed on Craigslist, an online marketplace that has the world's largest collection of used cars for sale. The dataset includes all used car listings in the United States, and it was last updated in December 2020.
 
 Before cleaning the data, there were about 458,000 rows, each row representing a unique listing on Craigslist. There were 26 columns, each describing a specific characteristic of each car such as price, condition, manufacturer, type, etc.
 
@@ -294,23 +294,23 @@ With the data cleaning, EDA, and data processing done, I proceeded to begin the 
 
 ```{r}
 set.seed(57)
-vehicles_split <- initial_split(vehicles, prop = 0.7, strata = price)
-vehicles_train <- training(vehicles_split)
-vehicles_test <- testing(vehicles_split)
+vehicle_split <- initial_split(vehicles, prop = 0.7, strata = price)
+vehicle_train <- training(vehicle_split)
+vehicle_test <- testing(vehicle_split)
 ```
 
 Next, I compared the dimensions (rows and columns) of the training and testing sets to the full data set. I was able to confirm that the dimensions matched.
 
 ```{r}
-dim(vehicles_split)
-dim(vehicles_train)
-dim(vehicles_test)
+dim(vehicle_split)
+dim(vehicle_train)
+dim(vehicle_test)
 ```
 
 Finally, I created resamples using v-fold cross-validation, folding the training set using 10 folds and 5 repeats and stratifying by `price`.
 
 ```{r}
-vehicles_fold <- vfold_cv(vehicles_train, v = 10, repeats = 5, strata = price)
+model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3, strata = price)
 ```
 
 ### Modeling Setup
@@ -429,7 +429,7 @@ btree_wflow <- workflow() %>%
 # Support vector machine
 svmrb_workflow <- workflow() %>% 
   add_model(svmrb_model) %>% 
-  add_recipe(vehicles_recipe)
+  add_recipe(vehicle_recipe)
 ```
 
 ### Tuning
