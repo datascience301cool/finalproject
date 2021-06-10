@@ -37,10 +37,16 @@ The goal of this project was to develop a model that can accurately predict the 
 
 Throughout the project, I refer to the data set as the `vehicles` data set. The data was read in using the following code. Since I will be demonstrating the data cleaning I performed, I read in the unprocessed data.
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, eval = FALSE}
 vehicles <- read_csv("data/unprocessed/vehicles.csv") %>% 
   clean_names()
 ```
+```{r, message = FALSE}
+load('data/vehicles.rda')
+load('data/vehicles_strat.rda')
+```
+
+
 
 
 ## EDA and Data Cleaning
@@ -49,7 +55,7 @@ Before beginning the EDA, I simplified the data set by removing irrelevant colum
 
 ```{r}
 vehicles <- vehicles %>% 
-  select(-c(x1, id, url, region_url, vin, image_url, description, posting_date))
+  select(-c(id, url, region_url, vin, image_url, description, posting_date))
 ```
 
 After doing this, I began the EDA by performing an assurance check of the data using `skimr::skim_without_charts()`. 
