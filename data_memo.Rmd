@@ -1,8 +1,14 @@
 ---
-title: "Data Memo"
-author: "Edwin Chalas Cuevas, Preston Chan, Lauren Caldrone, Joshua Levitas"
-date: "4/8/2021"
-output: html_document
+title: "Final Project Data Memo"
+subtitle: "Data Science III (STAT 301-3)"
+author: "Preston Chan, Edwin Chalas, Lauren Caldrone, and Josh Levitas"
+date: "April 8^th^, 2021"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    highlight: "tango"
 ---
 
 ```{r setup, include=FALSE}

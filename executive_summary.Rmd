@@ -1,7 +1,7 @@
 ---
 title: "301-3 Final Project Executive Summary"
-subtitle: "Data Science II (STAT 301-2)"
-author: "Lauren, Preston, Edwin, Josh"
+subtitle: "Data Science III (STAT 301-3)"
+author: "Preston Chan, Edwin Chalas, Lauren Caldrone, and Josh Levitas"
 date: "June 9^th^, 2021"
 output:
   html_document:

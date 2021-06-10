@@ -1,6 +1,6 @@
 ---
 title: "Final Project Long Report"
-subtitle: "Data Science II (STAT 301-2)"
+subtitle: "Data Science III (STAT 301-3)"
 author: "Preston Chan, Edwin Chalas, Lauren Caldrone, and Josh Levitas"
 date: "June 9^th^, 2021"
 output:
@@ -571,43 +571,20 @@ The RMSE was about 0.211, meaning that the model performed slightly worse on the
 
 ## Conclusion and Next Steps
 
-Overall, the random forest model seemed to be pretty accurate in predicting the `price` of a used car on Craigslist given its `year`, `manufacturer`, `condition`, `cylinders`, `fuel`, `odometer`, `title_status`, `transmission`, `drive`, `type`, and `state_region`.
+Overall, the random forest model seemed to be pretty accurate in predicting the `price` of a used car on Craigslist given its `year`, `manufacturer`, `fuel`, `odometer`, `title_status`, `transmission`.
 
-I was curious how the model would do at predicting the price of a hypothetical used car listing on Craigslist. We found a specific listing, a 2012 Toyota RAV4, created a data frame containing the car's characteristics, and used this data frame and the random forest model to predict the `price` of the car.
+We were curious about how the model would do at predicting the price of a real used car listing on Craigslist. We found a specific listing, a 2005 Ford F-150 XLT, created a data frame containing the car's characteristics, and used this data frame and the random forest model to predict the `price` of the car.
 
 ```{r}
 # Create data frame for real listing
+
 used_car_listing <- tibble(
-  year = 2012, 
-  manufacturer = "toyota", 
-  condition = "good", 
-  cylinders = "4 cylinders", 
-  fuel = "gas", 
-  odometer = 166328, 
-  title_status = "clean", 
-  transmission = "automatic", 
-  drive = "4wd", 
-  type = "SUV", 
-  state_region = "midwest"
-)
-
-# Predict price
-predict(rf_results, used_car_listing)
-```
-
-I undid the log transformation to caluculate that the predicted price was $7,413. This was not far off the actual listing price of $7,999. It is possible that this particular listing was overpriced, or that the model underestimated the price. 
-
-Given that this particular listing's `price` was on low side, we  also wanted to try predicting the `price` of a more expensive listing. We found a listing for a 2016 Ford F250 listed for $30,000. Again, we  created a data frame containing the truck's characteristics and used the data frame and the random forest model to predict the `price` of the truck.
-
-```{r}
-# Create data frame for real listing
-used_car_listing2 <- tibble(
-  year = 2016, 
+  year = 2005, 
   manufacturer = "ford", 
-  condition = "excellent", 
+  condition = "good", 
   cylinders = "8 cylinders", 
   fuel = "gas", 
-  odometer = 43000, 
+  odometer = 130222, 
   title_status = "clean", 
   transmission = "automatic", 
   drive = "4wd", 
@@ -616,15 +593,51 @@ used_car_listing2 <- tibble(
 )
 
 # Predict price
-predict(rf_results, used_car_listing2)
+ex_1 <- predict(rf_results, used_car_listing)
+
+10^ex_1
 ```
 
-After undoing the log transformation, the predicted `price` ended up being $31,623, which was also pretty close to the actual `price`. We were pretty satisfied with these results, but seeing that the model underestimated the `price` in the first test and then overestimated it in the second test, we knew that the model could be improved.
+Undoing the log transformation for this truck, the predicted price was $5,428. This was not far off the actual listing price of $5,200. It is possible that this particular listing was underpriced, or that the model overestimated the price. 
 
-As for next steps, we  would try out other models or tuning parameters to improve the model. Unfortunately, running `tune_grid()` on the random forest model took several hours, so we were not able to perform very much trial and error or try out different models like boosted trees, which are even more resource intensive than random forests. However, if given more time we  would want to try out such models.
+Given that this particular listing's `price` was on low side, also wanted to try predicting the `price` of a more expensive listing. We found a listing for a 2018 Jeep Grand Cherokee listed for $29,650. Again, we created a data frame containing the truck's characteristics and used the data frame and the random forest model to predict the `price` of the truck.
 
-Ultimately, we  was quite satisfied with the predictive accuracy of the random forest model given the amount of time we  had to work on the project. We believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. However, if given more time, my next steps would be to try new models and/or tuning parameters to get an even lower RMSE.
+```{r}
+# Create data frame for real listing
+
+used_car_listing2 <- tibble(
+  year = 2018, 
+  manufacturer = "jeep", 
+  condition = "excellent", 
+  cylinders = "6 cylinders", 
+  fuel = "gas", 
+  odometer = 33894, 
+  title_status = "clean", 
+  transmission = "automatic", 
+  drive = "4wd", 
+  type = "SUV", 
+  state_region = "midwest"
+)
+
+# Predict price
+ex_2 <- predict(rf_results, used_car_listing2)
+
+10^ex_2
+```
+
+Undoing the log transformation, the predicted `price` ended up being $28,966, which is really close to the actual `price`. We're pretty satisfied with these results, but seeing that the model overestimated the `price` in the first test and then underestimated it in the second test, we think that the model could be improved.
+
+As for next steps, seeing the random forest model best three others makes us confident that this would be the best way to go for accuracy - especially looking at the closeness of the results given real data. However, we may want to try adjusting some tuning parameters to make this model even more accurate. 
+
+Ultimately, we're quite satisfied with the predictive accuracy of the random forest model given the amount of time we had to work on the project. We believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. However, if given more time, our next steps would be to try new tuning parameters to get an even lower RMSE.
+
 
 ## Citations
 
 Used Car Dataset: https://www.kaggle.com/austinreese/craigslist-carstrucks-data
+
+
+## GitHub Repo Link
+
+Link: https://github.com/datascience301cool/finalproject.git
+
