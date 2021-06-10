@@ -1,0 +1,21 @@
+Vehicles Codebook
+
+region (character): the region (often a city) within the state in which the listing is located
+price (numeric): the price of the listing
+year (numeric): the year in which the vehicle originally released
+manufacturer (factor): the manufacturer of the vehicle
+model (character): the name of the model of the vehicle
+condition (factor): the condition of the vehicle
+cylinders (factor): the number of cylinders the vehicle has
+fuel (factor): the type of fuel the vehicle uses
+odometer (numeric): the number of miles the vehicle has driven
+title_status (factor): the title status of the vehicle
+transmission (factor): the type of transmission the vehicle uses
+drive (factor): the type of drive the vehicle uses
+size (factor): the size of the vehicle
+type (factor): the type of the vehicle
+paint_color (factor): the paint color of the vehicle
+state (factor): the state in which the listing is located
+lat (numberic): the latitude of the listing's location
+long (numeric): the longitude of the listing's location
+state_region (factor): the region of the U.S. in which the listing is located
