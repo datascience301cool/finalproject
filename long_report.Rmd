@@ -279,72 +279,33 @@ vehicles <- vehicles %>%
 This was the final "processed" data set that I used for the modeling process.
 
 
-## Modeling
-
-### Data Spending
-
-With the data cleaning, EDA, and data processing done, I proceeded to begin the modeling process by first splitting the data. I split the data into the training and testing sets, allocating 70% to the training set and 30% to the testing set.
-
-```{r}
-set.seed(57)
-vehicles_split <- initial_split(vehicles, prop = 0.7, strata = price)
-vehicles_train <- training(vehicles_split)
-vehicles_test <- testing(vehicles_split)
-```
-
-Next, I compared the dimensions (rows and columns) of the training and testing sets to the full data set. I was able to confirm that the dimensions matched.
-
-```{r}
-dim(vehicles_split)
-dim(vehicles_train)
-dim(vehicles_test)
-```
-
-Finally, I created resamples using v-fold cross-validation, folding the training set using 10 folds and 5 repeats and stratifying by `price`.
-
-```{r}
-vehicles_fold <- vfold_cv(vehicles_train, v = 10, repeats = 5, strata = price)
-```
-
 ### Modeling Setup
 
-To set up everything I needed for the modeling process, I started by creating a recipe for my random forest and k-nearest neighbors models as well as a recipe for my linear regression model. I chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `condition`, `cylinders`, `fuel`, `odometer`, `title_status`, `transmission`, `drive`, `type`, and `state_region`). I chose to leave out `model` because this variable had 2,951 unique values, which would create far too many columns when being dummy encoded. I left out `region` (with 389 unique values) and `state` (with 51 unique values) for the same reason (this is why I created the `state_region` variable, which only had 5 unique values). I also left out `paint_color` since it had 12 unique values and did not seem like a strong predictor of price. I left out `lat` and `long` because they had no correlation with `price` (which was discovered in the EDA). Finally, I left out `size` because 60.9% of its values were missing, by far the highest percentage out of all variables.
+To set up everything we needed for the modeling process, we started by creating a recipe for our random forest, k-nearest neighbors, boosted tree, and support vector machine models. We chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `fuel`, `title_status`, `transmission`). We chose to leave out `model` because this variable had 2,951 unique values, which would create far too many columns when being dummy encoded. We left out `region` (with 389 unique values) and `state` (with 51 unique values) for the same reason. We also left out `paint_color` since it had 12 unique values and did not seem like a strong predictor of price. We left out `lat` and `long` because they had no correlation with `price` (which was discovered in the EDA). Finally, we left out `size`, `condition`, `cylinders`, `drive`, and `type` because they all had greater than 20% missingness.
 
-For imputation, I used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. Previously, I tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. I dummy encoded all nominal variables and used one-hot encoding in the recipe for the random forest and k-nearest neighbors models. In the recipe for the linear model, I did not use one-hot encoding, which was the only difference between the two recipes. Finally, I used `step_nzv()` to remove variables that were highly sparse, which also helped eliminate missingness when tuning. Finally, I used `step_normalize()` to center and scale all predictors.
+For imputation, we used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. Previously, we tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. We used `step_other()` on all categorical variables to pool infrequently occurring values into an "other" category. This helped a lot with reducing data sparseness as well as the total number of variables in the prepped and baked recipe (which made model tuning much smoother). We dummy encoded all nominal variables using one-hot encoding. We used `step_zv()` to remove variables that only contain a single value. Finally, we used `step_normalize()` to center and scale all predictors.
 
 ```{r}
-# Recipe for rf and knn
-vehicles_recipe <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
-  step_medianimpute(year, odometer) %>% 
-  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
+# Recipe
+vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicle_train) %>% 
+  step_impute_median(year, odometer) %>% 
+  step_impute_mode(manufacturer, fuel, title_status, transmission) %>% 
+  step_other(all_nominal(), -transmission, -fuel) %>% 
   step_dummy(all_nominal(), one_hot = TRUE) %>% 
-  step_nzv(all_predictors()) %>% 
-  step_normalize(all_predictors())
-
-# Recipe for lm
-vehicles_recipe_lm <- recipe(price ~ year + manufacturer + condition + cylinders + fuel + odometer + title_status + transmission + drive + type + state_region, data = vehicles_train) %>% 
-  step_medianimpute(year, odometer) %>% 
-  step_modeimpute(manufacturer, condition, cylinders, fuel, title_status, transmission, drive, type) %>% 
-  step_dummy(all_nominal()) %>% 
-  step_nzv(all_predictors()) %>% 
-  step_normalize(all_predictors())
+  step_zv(all_predictors()) %>% 
+  step_normalize(all_numeric(), -all_outcomes())
 ```
 
-Next, I prepped and baked both recipes.
+Next, we prepped and baked both recipes.
 
 ```{r}
-# Prep and bake the recipe for rf and knn
-baked_data <- vehicles_recipe %>% 
-  prep(vehicles_train) %>% 
-  bake(new_data = NULL)
-
-# Prep and bake the recipe for lm
-baked_data_lm <- vehicles_recipe_lm %>% 
-  prep(vehicles_train) %>% 
+# Prep and bake the recipe
+baked_data <- vehicle_recipe %>% 
+  prep(vehicle_train) %>% 
   bake(new_data = NULL)
 ```
 
-Finally, I set up the models for the random forest, k-nearest neighbors, and linear models, being sure to tune `mtry` and `min_n` for the random forest model and `neighbors` for the k-nearest neighbors model.
+Finally, we set up the models for the random forest, k-nearest neighbors, boosted tree, and support vector machine models, being sure to tune `mtry` and `min_n` for the random forest model, `neighbors` for the k-nearest neighbors model, `sample_size` for the boosted tree model, and `cost` and `rbf_sigma` for the support vector machine model.
 
 ```{r}
 # Random forest
@@ -353,7 +314,7 @@ rf_model <- rand_forest(
   mtry = tune(), 
   min_n = tune()
 ) %>% 
-  set_engine("ranger", importance = "impurity")
+  set_engine("ranger")
 
 # K-nearest neighbors
 knn_model <- nearest_neighbor(
@@ -362,23 +323,34 @@ knn_model <- nearest_neighbor(
 ) %>% 
   set_engine("kknn")
 
-# Linear regression
-lm_model <- linear_reg() %>% 
-  set_engine("lm")
+# Boosted tree
+btree <- boost_tree(
+  mode = 'regression',
+  sample_size = tune()
+) %>%
+  set_engine('xgboost')
+
+# Support vector machin
+svmrb_model <- svm_rbf(
+  mode = "regression",
+  cost = tune(),
+  rbf_sigma = tune()
+) %>%
+  set_engine("kernlab")
 ```
 
 ### Tuning Setup
 
-Next, I set up the tuning parameters for the random forest and k-nearest neighbors models. Starting with the random forest model, I set a custom range for `mtry` since a default is not given. I range I chose was from 2 to 15 variables. I set the minimum to 2 because I wanted at least 2 predictors to be used, and I set the maximum to 15 because there were 31 variables (30 if you exclude `price`), so 15 felt like a good balance between allowing for many predictors to be used and not overloading my computer. I set the number of levels in the grid to 5 to again balance complexity with computational efficiency.
+Next, we set up the tuning parameters for the random forest and k-nearest neighbors models. Starting with the random forest model, we set a custom range for `mtry` since a default is not given. The range we chose was from 2 to 17 variables. We set the minimum to 2 because we wanted at least 2 predictors to be used, and we set the maximum to 17 because there were 17 total perdictors in the prepped and baked recipe. We set the number of levels in the grid to 5 to again balance complexity with computational efficiency.
 
 ```{r}
 rf_params <- parameters(rf_model) %>% 
-  update(mtry = mtry(range = c(2, 15)))
+  update(mtry = mtry(range = c(2, 17)))
 
 rf_grid <- grid_regular(rf_params, levels = 5)
 ```
 
-For the k-nearest neighbors model, I did not have to customize `min_n` because there was already a good default. For the grid, I again set the number of levels to 5.
+For the k-nearest neighbors model, we did not have to customize `min_n` because there was already a good default. For the grid, we again set the number of levels to 5.
 
 ```{r}
 knn_params <- parameters(knn_model)
@@ -386,64 +358,97 @@ knn_params <- parameters(knn_model)
 knn_grid <- grid_regular(knn_params, levels = 5)
 ```
 
-Finally, I set up the workflows for each model using each model's recipe (`vehicles_recipe` for the random forest and k-nearest neighbors models and `vehicles_recipe_lm` for the linear model).
+For the boosted tree model, we did not have to customize `sample_size` because there was already a good default. For the grid, we again set the number of levels to 5.
+
+```{r}
+params <- parameters(btree)
+
+btree_grid <- grid_regular(params, levels = 5)
+```
+
+For the support vector machine model, we did not have to customize `cost` or `rbf_sigma` because there were already good defaults for both. For the grid, we again set the number of levels to 5.
+
+```{r}
+svmrb_param <- parameters(svmrb_model) 
+
+svmrb_grid <- grid_regular(svmrb_param, levels = 5)
+```
+
+Finally, we set up the workflows for each model using `vehicle_recipe`.
 
 ```{r}
 # Random forest
 rf_workflow <- workflow() %>% 
   add_model(rf_model) %>% 
-  add_recipe(vehicles_recipe)
+  add_recipe(vehicle_recipe)
 
 # K-nearest neighbors
 knn_workflow <- workflow() %>% 
   add_model(knn_model) %>% 
-  add_recipe(vehicles_recipe)
+  add_recipe(vehicle_recipe)
 
-# Linear regression
-lm_workflow <- workflow() %>% 
-  add_model(lm_model) %>% 
-  add_recipe(vehicles_recipe_lm)
+# Boosted tree
+btree_wflow <- workflow() %>%
+  add_model(btree) %>%
+  add_recipe(vehicle_recipe)
+
+# Support vector machine
+svmrb_workflow <- workflow() %>% 
+  add_model(svmrb_model) %>% 
+  add_recipe(vehicles_recipe)
 ```
 
 ### Tuning
 
-Finally, I tuned the random forest and k-nearest neighbors models, setting the resamples equal to `vehicles_fold`, the resamples created earlier using v-fold cross-validation.
+Finally, we tuned the random forest, k-nearest neighbors, boosted tree, and support vector machine models, setting the resamples equal to `model_folds`, the resamples created earlier using v-fold cross-validation.
 
 ```{r, eval=FALSE}
 # Random forest
-rf_tune <- rf_workflow %>%
+rf_tune <- rf_workflow %>% 
   tune_grid(
-    resamples = vehicles_fold,
+    resamples = model_folds, 
     grid = rf_grid
   )
 
 # K-nearest neighbors
-knn_tune <- knn_workflow %>%
+knn_tune <- knn_workflow %>% 
   tune_grid(
-    resamples = vehicles_fold,
+    resamples = model_folds, 
     grid = knn_grid
+  )
+
+# Boosted tree
+btree_tune <- btree_wflow %>%
+  tune_grid(
+    resamples = model_folds,
+    grid = btree_grid
+  )
+
+# Support vector machine
+svmrb_tuned <- svmrb_workflow %>% 
+  tune_grid(
+    resamples = model_folds, 
+    grid = svmrb_grid
   )
 ```
 
 ```{r, echo=FALSE}
 # Random forest
-load(file = "tuning/data/rf_tune.rda")
+load(file = "data/rf_tune.rda")
 
 # K-nearest neighbors
-load(file = "tuning/data/knn_tune.rda")
-```
+load(file = "data/knn_tune.rda")
 
-For the linear model, I simply fitted it to the resamples.
+# Boosted tree
+load(file = "data/btree_tune.rda")
 
-```{r}
-vehicles_control <- control_resamples(save_pred = TRUE)
-
-lm_fit <- fit_resamples(lm_workflow, resamples = vehicles_fold, control = vehicles_control)
+# Support vector machine
+load(file = "data/svmrb_tuned.rda")
 ```
 
 ### Evaluation of results
 
-To evaluate the tuning results for the random forest and k-nearest neighbors models, I used `autoplot()` to view the change in RMSE as the parameters changed.
+To evaluate the tuning results for the random forest and k-nearest neighbors models, we used `autoplot()` to view the change in RMSE as the parameters changed.
 
 ```{r}
 # Random forest
@@ -453,13 +458,25 @@ rf_tune %>%
 # K-nearest neighbors
 knn_tune %>% 
   autoplot(metric = "rmse")
+
+# Boosted tree
+btree_tune %>% 
+  autoplot(metric = "rmse")
+
+# Support vector machine
+svmrb_tuned %>% 
+  autoplot(metric = "rmse")
 ```
 
-Based on `autoplot()` for the random forest model, between 2 and 5 `mtry`s, the RMSE dropped sharply for all values of `min_n`. Between 5 and 8 `mtry`s, the RMSE decreased for all values of `min_n`, but at a much smaller magnitude. Beyond 8 `mtry`s, the RMSE basically flattened out for all values of `min_n`. It appears that the optimal parameters were 8 for `mtry` and 2 for `min_n`.
+Based on `autoplot()` for the random forest model, between 2 and 5 `mtry`s, the RMSE dropped sharply for all values of `min_n`. Between 5 and 9 `mtry`s, the RMSE decreased for larger values of `min_n` (21, 30, and 40) but increased for smaller values of `min_n` (2 and 11). Beyond 9 `mtry`s, the RMSE increased for all values of `min_n`. It seemed to increase more for smaller values or `min_n`. It appears that the optimal parameters were 9 for `mtry` and 40 for `min_n`.
 
 Based on the `autoplot()` for the k-nearest neighbors model, the RMSE strictly decreased as the number of `neighbors` increased, but it decreased at a diminishing rate. It appears that the optimal number of `neighbors` was 15.
 
-Next, I used `select_best()` on the random forest and k-nearest neighbors models to verify that my judgements were correct about which parameters produced the lowest RMSE for each model.
+Based on the `autoplot()` for the boosted tree model, the RMSE strictly decreased as the proportion of observations sampled (i.e., the `sample_size`) increased, but it decreased at a diminishing rate. It appears that the optimal `sample_size` was 1.
+
+Based on the `autoplot()` for the support vector machine model, the RMSE seemed to generally decrease as `cost` increased. This is especially true for three values of `rbf_sigma` (1.0e-05, 1.0e+00, and 3.162278e-03), which all had pretty large decreases in RMSE. For the other two values of `rbf_sigma`, RMSE generally remained constant as `cost` increased. It appears that the optimal parameters were 32 for `cost` and 3.162278e-03 for `rbf_sigma`.
+
+Next, we used `select_best()` on the random forest, k-nearest neighbors, boosted tree, and support vector machine models to verify that our judgements were correct about which parameters produced the lowest RMSE for each model.
 
 ```{r}
 # Best random forest parameters
@@ -469,14 +486,22 @@ rf_tune %>%
 # Best k-nearest neighbors parameters
 knn_tune %>% 
   select_best(metric = "rmse")
+
+# Best boosted tree parameters
+btree_tune %>% 
+  select_best(metric = "rmse")
+
+# Best support vector machine parameters
+svmrb_tuned %>% 
+  select_best(metric = "rmse")
 ```
 
-Next, I compared the RMSEs produced by each of the three models (random forest, k-nearest neighbors, and linear regression) to find the best overall model.
+Next, we compared the RMSEs produced by each of the three models (random forest, k-nearest neighbors, boosted tree, and support vector machine) to find the best overall model.
 
 ```{r}
 tune_results <- tibble(
-  model_type = c("rf", "knn", "lm"), 
-  tune_info = list(rf_tune, knn_tune, lm_fit), 
+  model_type = c("rf", "knn", "btree", "svmrb"), 
+  tune_info = list(rf_tune, knn_tune, btree_tune, svmrb_tuned), 
   assessment_info = map(tune_info, collect_metrics), 
   best_model = map(tune_info, ~ select_best(.x, metric = "rmse"))
 )
@@ -488,7 +513,7 @@ tune_results %>%
   arrange(mean)
 ```
 
-From these results, I was able to determine that the random forest model with an `mtry` of 8 and a `min_n` of 2 had the lowest RMSE at about 0.161. Having found the best model, I then created a workflow using this model and then fitted it to the training set.
+From these results, we were able to determine that the random forest model with an `mtry` of 9 and a `min_n` of 40 had the lowest RMSE at about 0.210. Having found the best model, we then created a workflow using this model and then fitted it to the training set.
 
 ```{r}
 # Workflow
@@ -496,18 +521,19 @@ rf_workflow_tuned <- rf_workflow %>%
   finalize_workflow(select_best(rf_tune, metric = "rmse"))
 
 # Fitting to training set
-rf_results <- fit(rf_workflow_tuned, vehicles_train)
+rf_results <- fit(rf_workflow_tuned, vehicle_train)
 ```
 
-Finally, I tested the fitted model on the testing set and compared the predicted `price`s to the actual `price`s to get the RMSE.
+Finally, we tested the fitted model on the testing set and compared the predicted `price`s to the actual `price`s to get the RMSE.
 
 ```{r, message=FALSE, warning=FALSE}
-predict(rf_results, new_data = vehicles_test) %>% 
-  bind_cols(vehicles_test %>% select(price)) %>% 
+predict(rf_results, new_data = vehicle_test) %>% 
+  bind_cols(vehicle_test %>% select(price)) %>% 
   rmse(truth = price, estimate = .pred)
 ```
 
-The RMSE was about 0.157, meaning that the model performed slightly better on the testing data than it did on the resamples.
+The RMSE was about 0.211, meaning that the model performed slightly worse on the testing data than it did on the resamples.
+
 
 ## Conclusion and Next Steps
 

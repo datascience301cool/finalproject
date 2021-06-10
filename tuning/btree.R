@@ -26,7 +26,6 @@ vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_s
 btree <- boost_tree(
   mode = 'regression',
   sample_size = tune()
-  
 ) %>%
   set_engine('xgboost')
 

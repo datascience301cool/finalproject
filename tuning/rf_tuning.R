@@ -4,7 +4,6 @@
 # Load packages
 library(tidyverse)
 library(tidymodels)
-library(vip)
 
 # Set seed
 set.seed(57)
@@ -18,7 +17,7 @@ rf_model <- rand_forest(
   mtry = tune(), 
   min_n = tune()
 ) %>% 
-  set_engine("ranger", importance = "impurity")
+  set_engine("ranger")
 
 # # Check tuning parameters
 # parameters(rf_model)
@@ -36,11 +35,16 @@ rf_workflow <- workflow() %>%
   add_recipe(vehicle_recipe)
 
 # Tuning/fitting
+tic("Random Forest")
 rf_tune <- rf_workflow %>% 
   tune_grid(
     resamples = model_folds, 
     grid = rf_grid
   )
+toc(log = TRUE)
+
+# save runtime info
+rf_runtime <- tic.log(format = TRUE)
 
 # Write out results & workflow
-save(rf_tune, rf_workflow, file = "data/rf_tune.rda")
+save(rf_tune, rf_workflow, rf_runtime, file = "data/rf_tune.rda")
