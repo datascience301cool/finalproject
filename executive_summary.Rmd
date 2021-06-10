@@ -31,12 +31,8 @@ load(file = "data/processed/vehicles_strat.rda")
 
 # Split the data
 set.seed(57)
-
-vehicle_split <- vehicles_strat %>%
-  initial_split(prop = 0.8, strata = price)
-
+vehicle_split <- initial_split(vehicles_strat, prop = 0.8, strata = price)
 vehicle_train <- training(vehicle_split)
-
 vehicle_test <- testing(vehicle_split)
 ```
 
@@ -44,7 +40,7 @@ vehicle_test <- testing(vehicle_split)
 
 For our final project, we decided to create four different predictive models that can predict the price of used cars based on a set of car characteristics. After creating all four models, we tested them to see which performed the best. The data set was based off of all used car listings in the U.S. on Craigslist.
 
-When first looking at the data, our group saw that there was missingness in a lot of the variables, probably explained by how big the data set actually is. We simply took care of missingness in the EDA and recipe. Also, becuase 596 vehicles of over 458,000 listings were above $100,000, we considered them to be outliers. We also thought fitering out listings below $1,000 would be important because they do not reflect the full value of the car. We also performed a log transformation of `price` to normalize the distribution. The graphs below show the distribution of `price` before and after the above changes were made to the dataset.
+When first looking at the data, our group saw that there was missingness in a lot of the variables, probably explained by how big the data set actually is. We simply took care of missingness in the EDA and recipe. Also, because 97 vehicles of 111,860 listings were above $100,000, we considered them to be outliers. We also thought filtered out listings priced under $1,000 because earlier, we had gone on Craiglist to look at cars priced below $1,000 and discovered that many of these listings were for cars that could be paid off in monthly increments of a few hundred dollars, and these monthly prices do not reflect the full value of the car. We also performed a log transformation of `price` to normalize the distribution. The graphs below show the distribution of `price` before and after the above changes were made to the dataset.
 
 ```{r}
 # looked at distribution of price
@@ -75,12 +71,12 @@ To start the modeling process, we split the data into training and testing sets 
 
 We then created a recipe for all four models including random forest, k-nearest neighbors, boosted tree, and support vector machine with radial basis function.
 
-In the recipe, we chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `fuel`, `title_status`, `transmission`). 
+In the recipe, we chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `fuel`, `title_status`, and `transmission`). 
 
-For imputation, we used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. Previously, we tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. We used `step_other()` on all categorical variables to pool infrequently occurring values into an "other" category. This helped a lot with reducing data sparseness as well as the total number of variables in the prepped and baked recipe (which made model tuning much smoother). We dummy encoded all nominal variables using one-hot encoding. We used `step_zv()` to remove variables that only contain a single value. Finally, we used `step_normalize()` to center and scale all predictors.
+For imputation, we used `step_impute_median()` for the numeric variables and `step_impute_mode()` for the categorical variables. Previously, we tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. We used `step_other()` on all categorical variables to pool infrequently occurring values into an "other" category. This helped a lot with reducing data sparseness as well as the total number of variables in the prepped and baked recipe (which made model tuning much smoother). We dummy encoded all nominal variables using one-hot encoding. We used `step_zv()` to remove variables that only contain a single value. Finally, we used `step_normalize()` to center and scale all predictors.
 
 ```{r}
-# Recipe for svmrb, bt, knnn, and rf
+# Recipe for rf, knn, btree, and svmrb
 vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_status + transmission, data = vehicle_train) %>% 
   step_impute_median(year, odometer) %>% 
   step_impute_mode(manufacturer, fuel, title_status, transmission) %>% 
@@ -90,7 +86,7 @@ vehicle_recipe <- recipe(price ~ year + manufacturer + fuel + odometer + title_s
   step_normalize(all_numeric(), -all_outcomes())
 ```
 
-After creating the recipes, we created workflows for each model and then tuned the random forest, nearest neighbors, boosted tree, and SVM radial basis models.
+After creating the recipe, we created workflows for each model and then tuned the random forest, k-nearest neighbors, boosted tree, and SVM radial basis models.
 
 ```{r, include=FALSE}
 # Load random forest tuning
@@ -169,7 +165,7 @@ predict(rf_results, new_data = vehicle_test) %>%
 
 The RMSE was about 0.211, meaning that the model performed slightly worse on the testing data than it did on the resamples.
 
-After testing all models, the random forest model was the most accurate in predicting 'price' of a used car on Cragislist given its `year`, `manufacturer`, `fuel`, `odometer`, `title_status`, and `transmission`.
+After testing all models, the random forest model was the most accurate in predicting the `price` of a used car on Cragislist given its `year`, `manufacturer`, `fuel`, `odometer`, `title_status`, and `transmission`.
 
 To get a better sense of the accuracy of the model, we decided to test it on an actual used car listing on Craigslist (specifically, a 2005 Ford F-150 XLT). We used this data frame and the random forest model to predict price. 
 
@@ -190,9 +186,9 @@ ex_1 <- predict(rf_results, used_car_listing)
 10^ex_1
 ```
 
-After undoing the log transformation, we found that the predicted price was $5,428, which was not far off the actual listing price of $5,200. Either the car was overpriced or the model underestimated the price.
+After undoing the log transformation, we found that the predicted price was $5,831, which was not far off the actual listing price of $5,200. Either the car was underpriced or the model overestimated the `price`.
 
-Given that this particular listing's `price` was on low side, we also wanted to try predicting the `price` of a more expensive listing. we found a listing for a 2018 Jeep Grand Cherokee listed for $29,650.
+Given that this particular listing's `price` was on low side, we also wanted to try predicting the `price` of a more expensive listing. We found a listing for a 2018 Jeep Grand Cherokee listed for $29,650.
 
 ```{r}
 # Create data frame for real listing
@@ -211,6 +207,6 @@ ex_2 <- predict(rf_results, used_car_listing2)
 10^ex_2
 ```
 
-After undoing the log transformation, the predicted `price` ended up being $28,966, which was also pretty close to the actual `price`. We were  satisfied with these results; however, after seeing that the model over-predicted the `price` in the first test and then under-predicted it in the second test, we knew that the there was room for improvement for this model.
+After undoing the log transformation, the predicted `price` ended up being $30,009, which was very close to the actual `price`. We were  satisfied with these results; however, after seeing that the model just barely over-predicted the `price` in both tests, we knew that the there was room for improvement for this model.
 
 In the end, we were satisfied with the predictive accuracy of the random forest model. We believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. With more time, our next steps would be to try new models and/or tuning parameters to get an even lower RMSE, which would hopefully improve the predictive accuracy. 

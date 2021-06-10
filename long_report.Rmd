@@ -52,13 +52,29 @@ vehicles <- vehicles %>%
   select(-c(id, url, region_url, vin, image_url, description, posting_date))
 ```
 
-After doing this, we began the EDA by performing an assurance check of the data using `skimr::skim_without_charts()`. 
+After doing this, we began the EDA by inspecting the missingness in the dataset using the `naniar` package.
+
+```{r}
+naniar::gg_miss_var(vehicles)
+```
+
+The main takeaway from the results was that a handful of the variables had missingness, which was not surprising considering the massive size of the data set. These variables include `size`, `condition`, `cylinders`, `drive`, `paint_color`, and `type`. We decided to look at the actual percentage of missing values in each of these variables.
+
+```{r}
+vehicles %>% 
+  select(size, condition, cylinders, drive, paint_color, type) %>% 
+  naniar::miss_var_summary()
+```
+
+The table shows that `size`, `condition`, `cylinders`, `drive`, `paint_color`, and `type` have roughly 69%, 37%, 33%, 25%, 24%, and 19% missingness, respectively.
+
+We also performed a data assurance check using `skimr::skim_without_charts()`.
 
 ```{r}
 skimr::skim_without_charts(vehicles)
 ```
 
-The main takeaway from the results was that a large handful of the variables had missingness, which was not surprising considering the massive size of the data set. Some of the variables that seemed to be important predictors (based on my intuition) had a somewhat high proportion of missingness, namely `condition`, `cylinders`, `drive`, `size`, and `type`. The proportion of missing values in these columns was 41%, 37%, 31%, 70%, and 25%, respectively. All of the other columns (besides `paint_color`, which is an unimportant variable) had very low missingness. Another thing we noticed was that `state` had 51 unique vales and `region` had 405 unique values. We knew that this would cause an issue later on when creating a recipe and turning these variables into dummy variables since it would produce far too many columns, so we decided to classify the states into 5 regions: `northeast`, `southeast`, `midwest`, `southwest`, and `west`.
+The main takeaway from this output, other than the missingness, was that `state` had 51 unique vales and `region` had 405 unique values. We knew that this would cause an issue later on when creating a recipe and turning these variables into dummy variables since it would produce far too many columns, so we decided to classify the states into 5 regions: `northeast`, `southeast`, `midwest`, `southwest`, and `west`.
 
 ```{r}
 vehicles <- vehicles %>% 
@@ -120,7 +136,7 @@ vehicles %>%
   count()
 ```
 
-Only 596 vehicles out of over 458,000 listings were priced at above $100,000. This implies that cars listed for over $100,000 are clearly outliers. 
+Only 97 vehicles out of 111,860 listings were priced at above $100,000. This implies that cars listed for over $100,000 are clearly outliers. 
 
 We also decided to look at how many listings were priced at below $1,000. This is because earlier, we had gone on Craiglist to look at cars priced below $1,000 and discovered that many of these listings were for cars that could be paid off in monthly increments of a few hundred dollars. Since these monthly prices do not reflect the full value of the car, we decided it would be a good idea to filter these out. We decided to see how many listings would be taken out by this filter.
 
@@ -130,7 +146,7 @@ vehicles %>%
   count()
 ```
 
-More than 48,000 listings fell into this price range. This seemed like a high number, so we decided to look further into this subset of the data. We looked at the number of cars priced at $0.
+More than 12,000 listings fell into this price range. This seemed like a high number, so we decided to look further into this subset of the data. We looked at the number of cars priced at $0.
 
 ```{r}
 vehicles %>% 
@@ -138,7 +154,7 @@ vehicles %>%
   count()
 ```
 
-More than 33,000 listings were priced at $0. Upon looking at such listings on Craigslist, we discovered that almost all of these listings were from people who were hiding the real price of the car. In other words, they set the price to $0, and then inside the description, they would include a link to a different website which had the actual price of the car.
+More than 8,000 listings were priced at $0. Upon looking at such listings on Craigslist, we discovered that almost all of these listings were from people who were hiding the real price of the car. In other words, they set the price to $0, and then inside the description, they would include a link to a different website which had the actual price of the car.
 
 Based on these analyses, we decided that listings priced below $1,000 or above $100,000 were outliers. Thus, we looked at the distribution of `price` again after filtering out these outliers.
 
@@ -247,7 +263,7 @@ vehicles %>%
   count()
 ```
 
-Only 2,154 listings out of the 400,000+ listings had an odometer with over 300,000 miles. Therefore, we considered these as outliers.
+Only 514 listings out of 111,860 listings had an odometer with over 300,000 miles. Therefore, we considered these as outliers.
 
 Having found the unusual values in `year` and `odometer` that may have been decreasing their correlation with `price`, we created a new correlation table in which we filtered out the unusual values.
 
@@ -271,6 +287,41 @@ vehicles <- vehicles %>%
   filter(year > 1993)
 ```
 
+We also wanted to inspect the correlations between `price` and the categorical variables. We created scatter plots for `price` against each categorical variable. We chose to not create scatter plots for `condition`, `cylinders`, `drive`, `size`, `type`, and `paint_color` since we discovered earlier in the EDA that these variables had more than 20% missingness and thus had too much missingness to be included in the recipe anyways. (Note: `type` had 19% missingness, but we decided as a team that this was still to high to include it as a predictor.)
+
+```{r}
+plot1 <- vehicles %>% 
+  ggplot(aes(manufacturer, price)) + 
+  geom_point()
+
+plot2 <- vehicles %>% 
+  ggplot(aes(fuel, price)) + 
+  geom_point()
+
+plot3 <- vehicles %>% 
+  ggplot(aes(title_status, price)) + 
+  geom_point()
+
+plot4 <- vehicles %>% 
+  ggplot(aes(transmission, price)) + 
+  geom_point()
+
+plot5 <- vehicles %>% 
+  ggplot(aes(state_region, price)) + 
+  geom_point()
+
+plot6 <- vehicles %>% 
+  ggplot(aes(paint_color, price)) + 
+  geom_point()
+
+plot1
+plot2 + plot3
+plot4 + plot5
+plot6
+```
+
+From the results, we determined that `manufacturer`, `fuel`, `title_status`, and `transmission` seemed to be somewhat related to `price` and thus included them in the recipe as predictors. On the other hand, `state_region` and `paint_color` did not seem to have any sort of relationship with `price` and thus were not included in the recipe as predictors.
+
 The last step in the data processing was shrinking the size of the data set. We were forced to do this because we initially tried tuning my models using the full data set, and by the time we had waited about 10 hours, the tuning process was still not finished. We decided to take a stratified sample (stratified by `price`) equivalent to 5% the size of the cleaned `vehicles` data set. (Note: we set `eval=FALSE` for this code chunk because the `vehicles` dataset being used thus far is 25% the size of the full unprocessed dataset as described at the end of the introduction. Instead, we loaded in a separate .rda file called `vehicle_strat.rda` which contains the 5% stratified sample of the full unprocessed dataset. Again, we had to use this method due to the GitHub file size restrictions.)
 
 ```{r, eval=FALSE}
@@ -293,7 +344,7 @@ With the data cleaning, EDA, and data processing done, we proceeded to begin the
 
 ```{r}
 set.seed(57)
-vehicle_split <- initial_split(vehicles, prop = 0.8, strata = price)
+vehicle_split <- initial_split(vehicles_strat, prop = 0.8, strata = price)
 vehicle_train <- training(vehicle_split)
 vehicle_test <- testing(vehicle_split)
 ```
@@ -316,7 +367,7 @@ model_folds <- vfold_cv(vehicle_train, v = 5, repeats = 3, strata = price)
 
 To set up everything we needed for the modeling process, we started by creating a recipe for our random forest, k-nearest neighbors, boosted tree, and support vector machine models. We chose to include numeric variables (`year` and `odometer`) and categorical variables (`manufacturer`, `fuel`, `title_status`, `transmission`). We chose to leave out `model` because this variable had 2,951 unique values, which would create far too many columns when being dummy encoded. We left out `region` (with 389 unique values) and `state` (with 51 unique values) for the same reason. We also left out `paint_color` since it had 12 unique values and did not seem like a strong predictor of price. We left out `lat` and `long` because they had no correlation with `price` (which was discovered in the EDA). Finally, we left out `size`, `condition`, `cylinders`, `drive`, and `type` because they all had greater than 20% missingness.
 
-For imputation, we used `step_medianimpute()` for the numeric variables and `step_modeimpute()` for the categorical variables. Previously, we tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. We used `step_other()` on all categorical variables to pool infrequently occurring values into an "other" category. This helped a lot with reducing data sparseness as well as the total number of variables in the prepped and baked recipe (which made model tuning much smoother). We dummy encoded all nominal variables using one-hot encoding. We used `step_zv()` to remove variables that only contain a single value. Finally, we used `step_normalize()` to center and scale all predictors.
+For imputation, we used `step_impute_median()` for the numeric variables and `step_impute_mode()` for the categorical variables. Previously, we tried using `step_knnimpute()` for all variables, but it seemed to cause a lot of errors. We used `step_other()` on all categorical variables to pool infrequently occurring values into an "other" category. This helped a lot with reducing data sparseness as well as the total number of variables in the prepped and baked recipe (which made model tuning much smoother). We dummy encoded all nominal variables using one-hot encoding. We used `step_zv()` to remove variables that only contain a single value. Finally, we used `step_normalize()` to center and scale all predictors.
 
 ```{r}
 # Recipe
@@ -565,7 +616,7 @@ predict(rf_results, new_data = vehicle_test) %>%
   rmse(truth = price, estimate = .pred)
 ```
 
-The RMSE was about 0.199, meaning that the model performed slightly better on the testing data than it did on the resamples.
+The RMSE was about 0.211, meaning that the model performed slightly worse on the testing data than it did on the resamples.
 
 
 ## Conclusion and Next Steps
@@ -588,10 +639,11 @@ used_car_listing <- tibble(
 # Predict price
 ex_1 <- predict(rf_results, used_car_listing)
 
+# Undo log transformation
 10^ex_1
 ```
 
-Undoing the log transformation for this truck, the predicted price was $5,428. This was not far off the actual listing price of $5,200. It is possible that this particular listing was underpriced, or that the model overestimated the price. 
+Undoing the log transformation for this truck, the predicted price was $5,872. This was pretty close to the actual listing price of $5,200. It is possible that this particular listing was underpriced, or that the model overestimated the price. 
 
 Given that this particular listing's `price` was on low side, also wanted to try predicting the `price` of a more expensive listing. We found a listing for a 2018 Jeep Grand Cherokee listed for $29,650. Again, we created a data frame containing the truck's characteristics and used the data frame and the random forest model to predict the `price` of the truck.
 
@@ -609,14 +661,15 @@ used_car_listing2 <- tibble(
 # Predict price
 ex_2 <- predict(rf_results, used_car_listing2)
 
+# Undo log transformation
 10^ex_2
 ```
 
-Undoing the log transformation, the predicted `price` ended up being $28,966, which is really close to the actual `price`. We're pretty satisfied with these results, but seeing that the model over-predicted the `price` in the first test and then under-predicted it in the second test, we think that the model could be improved.
+Undoing the log transformation, the predicted `price` ended up being $30,050, which is very close to the actual `price`. We were pretty satisfied with these results, but seeing that the model just slightly over-predicted the `price` in both tests, we think that the model could be improved.
 
-As for next steps, seeing the random forest model best three others makes us confident that this would be the best way to go for accuracy - especially looking at the closeness of the results given real data. However, we may want to try adjusting some tuning parameters to make this model even more accurate. 
+As for next steps, seeing the random forest model best the three others makes us confident that this would be the best way to go for accuracy - especially when looking at the closeness of the results given real data. However, we may want to try adjusting some tuning parameters to make this model even more accurate. 
 
-Ultimately, we're quite satisfied with the predictive accuracy of the random forest model given the amount of time we had to work on the project. We believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. However, if given more time, our next steps would be to try new tuning parameters to get an even lower RMSE.
+Ultimately, we were quite satisfied with the predictive accuracy of the random forest model given the amount of time we had to work on the project. We believe it could be a useful tool for used car shoppers who are trying to assess the pricing of a particular listing. However, if given more time, our next steps would be to try new tuning parameters to get an even lower RMSE.
 
 
 ## Citations
