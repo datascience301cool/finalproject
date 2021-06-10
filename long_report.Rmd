@@ -44,6 +44,8 @@ vehicles <- read_csv("data/unprocessed/vehicles.csv") %>%
 ```{r, message = FALSE}
 load('data/vehicles.rda')
 load('data/vehicles_strat.rda')
+
+
 ```
 
 
@@ -51,9 +53,9 @@ load('data/vehicles_strat.rda')
 
 ## EDA and Data Cleaning
 
-Before beginning the EDA, I simplified the data set by removing irrelevant columns These columns include things likethe URL to the listing, the listing ID, the url to the listing's image, etc. These columns will have no predictive power.
+Before beginning the EDA, I simplified the data set by removing irrelevant columns These columns include things like the URL to the listing, the listing ID, the url to the listing's image, etc. These columns will have no predictive power.
 
-```{r}
+```{r, eval=FALSE}
 vehicles <- vehicles %>% 
   select(-c(id, url, region_url, vin, image_url, description, posting_date))
 ```
